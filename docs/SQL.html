@@ -1,0 +1,1282 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+
+
+
+<title>Increasing Web Engagement and Organization with SQL</title>
+
+<script src="site_libs/header-attrs-2.14/header-attrs.js"></script>
+<script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<style>h1 {font-size: 34px;}
+       h1.title {font-size: 38px;}
+       h2 {font-size: 30px;}
+       h3 {font-size: 24px;}
+       h4 {font-size: 18px;}
+       h5 {font-size: 16px;}
+       h6 {font-size: 12px;}
+       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
+       pre:not([class]) { background-color: white }</style>
+<script src="site_libs/jqueryui-1.11.4/jquery-ui.min.js"></script>
+<link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
+<script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<link href="site_libs/highlightjs-9.12.0/default.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+<style type="text/css">code{white-space: pre;}</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+
+
+
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+img {
+  max-width:100%;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+details > summary > p:only-child {
+  display: inline;
+}
+pre code {
+  padding: 0;
+}
+</style>
+
+
+<style type="text/css">
+.dropdown-submenu {
+  position: relative;
+}
+.dropdown-submenu>.dropdown-menu {
+  top: 0;
+  left: 100%;
+  margin-top: -6px;
+  margin-left: -1px;
+  border-radius: 0 6px 6px 6px;
+}
+.dropdown-submenu:hover>.dropdown-menu {
+  display: block;
+}
+.dropdown-submenu>a:after {
+  display: block;
+  content: " ";
+  float: right;
+  width: 0;
+  height: 0;
+  border-color: transparent;
+  border-style: solid;
+  border-width: 5px 0 5px 5px;
+  border-left-color: #cccccc;
+  margin-top: 5px;
+  margin-right: -10px;
+}
+.dropdown-submenu:hover>a:after {
+  border-left-color: #adb5bd;
+}
+.dropdown-submenu.pull-left {
+  float: none;
+}
+.dropdown-submenu.pull-left>.dropdown-menu {
+  left: -100%;
+  margin-left: 10px;
+  border-radius: 6px 0 6px 6px;
+}
+</style>
+
+<script type="text/javascript">
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark it active
+  menuAnchor.tab('show');
+
+  // if it's got a parent navbar menu mark it active as well
+  menuAnchor.closest('li.dropdown').addClass('active');
+
+  // Navbar adjustments
+  var navHeight = $(".navbar").first().height() + 15;
+  var style = document.createElement('style');
+  var pt = "padding-top: " + navHeight + "px; ";
+  var mt = "margin-top: -" + navHeight + "px; ";
+  var css = "";
+  // offset scroll position for anchor links (for fixed navbar)
+  for (var i = 1; i <= 6; i++) {
+    css += ".section h" + i + "{ " + pt + mt + "}\n";
+  }
+  style.innerHTML = "body {" + pt + "padding-bottom: 40px; }\n" + css;
+  document.head.appendChild(style);
+});
+</script>
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "&#xe258;";
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+  background-color: transparent;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<!-- code folding -->
+
+
+
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+@media print {
+.toc-content {
+  /* see https://github.com/w3c/csswg-drafts/issues/4434 */
+  float: right;
+}
+}
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.90em;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+
+</style>
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+<!-- setup 3col/9col grid for toc_float and main content  -->
+<div class="row">
+<div class="col-xs-12 col-sm-4 col-md-3">
+<div id="TOC" class="tocify">
+</div>
+</div>
+
+<div class="toc-content col-xs-12 col-sm-8 col-md-9">
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-bs-toggle="collapse" data-target="#navbar" data-bs-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">MyLabJournal</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="index.html">Home</a>
+</li>
+<li>
+  <a href="SQL.html">SQL</a>
+</li>
+<li>
+  <a href="Links.html">Links</a>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div id="header">
+
+
+
+<h1 class="title toc-ignore">Increasing Web Engagement and Organization
+with SQL</h1>
+
+</div>
+
+
+<p>I employ SQL while consulting for UC Merced’s only specialized
+undergraduate research journal—The Undergraduate Historical Journal
+(UHJ), which I and a small band of dedicated students founded in 2013.
+Successive generations of undergraduates continue to manage this online,
+open-access journal and submit articles for peer-review and publication.
+While I am no longer an editor, I still summarize and analyze web
+traffic data and make recommendations to the editorial board.</p>
+<p>Data provided by the publication platform eScholarship, along with
+careful analysis, gives me the intelligence I need to recommend policies
+that best serve readers and authors. Web traffic also informs
+recommendations about optimal times to publish and, in turn, when and
+how to sequence pre-publication tasks such as marketing, editing,
+designing, and formatting.</p>
+<div class="figure" style="text-align: center">
+<img src="https://escholarship.org/cms-assets/3c651818be453391275b9a78a0895852f3aea07d3c4cf5e7d3d55e5363578928" alt="Just a couple of the journal covers for issues 1(1) and 4(1). You can find out more about the journal at https://escholarship.org/uc/ssha_uhj" width="33%" /><img src="https://escholarship.org/cms-assets/58e3c503349279633e9a77ca12f433a5ab7424136295b500cfd7224d081a3dba" alt="Just a couple of the journal covers for issues 1(1) and 4(1). You can find out more about the journal at https://escholarship.org/uc/ssha_uhj" width="33%" />
+<p class="caption">
+Just a couple of the journal covers for issues 1(1) and 4(1). You can
+find out more about the journal at <a
+href="https://escholarship.org/uc/ssha_uhj"
+class="uri">https://escholarship.org/uc/ssha_uhj</a>
+</p>
+</div>
+<div id="preparing-data" class="section level1">
+<h1>Preparing data</h1>
+<p>I always start by looking at the overall engagement data for the
+latest month compared to previous months to get a quick read on how the
+journal is doing. The raw data provided by eScholarship does not fit the
+needs of the editors out-of-the-box so viewing and cleaning is
+necessary.</p>
+<ul>
+<li>Month</li>
+<li>Deposits (# of articles published for the month)</li>
+<li>total_requests (downloads + view only)</li>
+<li>downloads (number of articles downloaded</li>
+<li>view_only (number of views but no downloads)</li>
+<li>perc_downloads (ratio of downloads to total engagement)</li>
+</ul>
+<pre class="sql"><code>SELECT * 
+FROM breakdown_by_month
+ORDER BY Month DESC
+LIMIT 10;
+</code></pre>
+<div class="knitsql-table">
+<table>
+<caption>Displaying records 1 - 10</caption>
+<thead>
+<tr class="header">
+<th align="left">Month</th>
+<th align="right">Deposits</th>
+<th align="right">total_req</th>
+<th align="right">Download</th>
+<th align="right">view_only</th>
+<th align="right">perc_dnld</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">2022-05</td>
+<td align="right">NA</td>
+<td align="right">1758</td>
+<td align="right">450</td>
+<td align="right">1308</td>
+<td align="right">25.6</td>
+</tr>
+<tr class="even">
+<td align="left">2022-04</td>
+<td align="right">NA</td>
+<td align="right">2515</td>
+<td align="right">812</td>
+<td align="right">1703</td>
+<td align="right">32.3</td>
+</tr>
+<tr class="odd">
+<td align="left">2022-03</td>
+<td align="right">NA</td>
+<td align="right">2144</td>
+<td align="right">487</td>
+<td align="right">1657</td>
+<td align="right">22.7</td>
+</tr>
+<tr class="even">
+<td align="left">2022-02</td>
+<td align="right">NA</td>
+<td align="right">1743</td>
+<td align="right">394</td>
+<td align="right">1349</td>
+<td align="right">22.6</td>
+</tr>
+<tr class="odd">
+<td align="left">2022-01</td>
+<td align="right">NA</td>
+<td align="right">1683</td>
+<td align="right">426</td>
+<td align="right">1257</td>
+<td align="right">25.3</td>
+</tr>
+<tr class="even">
+<td align="left">2021-12</td>
+<td align="right">8</td>
+<td align="right">2099</td>
+<td align="right">559</td>
+<td align="right">1540</td>
+<td align="right">26.6</td>
+</tr>
+<tr class="odd">
+<td align="left">2021-11</td>
+<td align="right">NA</td>
+<td align="right">2724</td>
+<td align="right">702</td>
+<td align="right">2022</td>
+<td align="right">25.8</td>
+</tr>
+<tr class="even">
+<td align="left">2021-10</td>
+<td align="right">NA</td>
+<td align="right">2786</td>
+<td align="right">814</td>
+<td align="right">1972</td>
+<td align="right">29.2</td>
+</tr>
+<tr class="odd">
+<td align="left">2021-09</td>
+<td align="right">NA</td>
+<td align="right">2108</td>
+<td align="right">603</td>
+<td align="right">1505</td>
+<td align="right">28.6</td>
+</tr>
+<tr class="even">
+<td align="left">2021-08</td>
+<td align="right">NA</td>
+<td align="right">1401</td>
+<td align="right">371</td>
+<td align="right">1030</td>
+<td align="right">26.5</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="transforming-the-date-column" class="section level2">
+<h2>Transforming the date column</h2>
+<p>We can see that the only time stamp for this databases is a
+concatenation of a four-character year and a two-character month such as
+2022-05. If we want to perform queries with temporal partitions, it
+would be best to create both a year and a month column. This will also
+allow us to get a better read on seasonality by comparing, for example,
+all July data to inspect whether low total are normal or anomalous.</p>
+<pre class="sql"><code>SELECT
+  SUBSTRING(Month,1,4) AS Y,
+  SUBSTRING(Month,6,2) AS M,
+  *
+FROM breakdown_by_month
+</code></pre>
+<div class="knitsql-table">
+<table>
+<caption>Displaying records 1 - 10</caption>
+<colgroup>
+<col width="7%" />
+<col width="4%" />
+<col width="12%" />
+<col width="14%" />
+<col width="15%" />
+<col width="14%" />
+<col width="15%" />
+<col width="15%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left">Y</th>
+<th align="left">M</th>
+<th align="left">Month</th>
+<th align="right">Deposits</th>
+<th align="right">total_req</th>
+<th align="right">Download</th>
+<th align="right">view_only</th>
+<th align="right">perc_dnld</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">2022</td>
+<td align="left">05</td>
+<td align="left">2022-05</td>
+<td align="right">NA</td>
+<td align="right">1758</td>
+<td align="right">450</td>
+<td align="right">1308</td>
+<td align="right">25.6</td>
+</tr>
+<tr class="even">
+<td align="left">2022</td>
+<td align="left">04</td>
+<td align="left">2022-04</td>
+<td align="right">NA</td>
+<td align="right">2515</td>
+<td align="right">812</td>
+<td align="right">1703</td>
+<td align="right">32.3</td>
+</tr>
+<tr class="odd">
+<td align="left">2022</td>
+<td align="left">03</td>
+<td align="left">2022-03</td>
+<td align="right">NA</td>
+<td align="right">2144</td>
+<td align="right">487</td>
+<td align="right">1657</td>
+<td align="right">22.7</td>
+</tr>
+<tr class="even">
+<td align="left">2022</td>
+<td align="left">02</td>
+<td align="left">2022-02</td>
+<td align="right">NA</td>
+<td align="right">1743</td>
+<td align="right">394</td>
+<td align="right">1349</td>
+<td align="right">22.6</td>
+</tr>
+<tr class="odd">
+<td align="left">2022</td>
+<td align="left">01</td>
+<td align="left">2022-01</td>
+<td align="right">NA</td>
+<td align="right">1683</td>
+<td align="right">426</td>
+<td align="right">1257</td>
+<td align="right">25.3</td>
+</tr>
+<tr class="even">
+<td align="left">2021</td>
+<td align="left">12</td>
+<td align="left">2021-12</td>
+<td align="right">8</td>
+<td align="right">2099</td>
+<td align="right">559</td>
+<td align="right">1540</td>
+<td align="right">26.6</td>
+</tr>
+<tr class="odd">
+<td align="left">2021</td>
+<td align="left">11</td>
+<td align="left">2021-11</td>
+<td align="right">NA</td>
+<td align="right">2724</td>
+<td align="right">702</td>
+<td align="right">2022</td>
+<td align="right">25.8</td>
+</tr>
+<tr class="even">
+<td align="left">2021</td>
+<td align="left">10</td>
+<td align="left">2021-10</td>
+<td align="right">NA</td>
+<td align="right">2786</td>
+<td align="right">814</td>
+<td align="right">1972</td>
+<td align="right">29.2</td>
+</tr>
+<tr class="odd">
+<td align="left">2021</td>
+<td align="left">09</td>
+<td align="left">2021-09</td>
+<td align="right">NA</td>
+<td align="right">2108</td>
+<td align="right">603</td>
+<td align="right">1505</td>
+<td align="right">28.6</td>
+</tr>
+<tr class="even">
+<td align="left">2021</td>
+<td align="left">08</td>
+<td align="left">2021-08</td>
+<td align="right">NA</td>
+<td align="right">1401</td>
+<td align="right">371</td>
+<td align="right">1030</td>
+<td align="right">26.5</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div id="keeping-tabs-on-overall-engagement" class="section level1">
+<h1>Keeping tabs on overall engagement</h1>
+<p>Keeping editors updated on month-over-month or year-over-year
+engagement is vital because it provides the highest level summary of
+product fitness—are the numbers up or down? How many engagements have
+the journal accumulated to date? And what is the average engagement for
+each month?</p>
+<pre class="sql"><code>
+WITH clean_date AS (
+SELECT
+  SUBSTRING(Month,1,4) AS Y,
+  SUBSTRING(Month,6,2) AS M,
+  *
+FROM breakdown_by_month
+)
+
+
+SELECT
+  *,
+    SUM(total_req) OVER(ORDER BY Month
+        ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS Tr_running_total,
+    SUM(Download) OVER(ORDER BY Month
+        ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS D_running_total,
+    AVG(total_req) OVER(ORDER BY Month
+        ROWS BETWEEN 6 PRECEDING AND CURRENT ROW) AS Tr_avg,
+    AVG(Download) OVER(ORDER BY Month
+        ROWS BETWEEN 6 PRECEDING AND CURRENT ROW) AS D_avg
+FROM clean_date
+ORDER BY Month DESC;
+</code></pre>
+<div class="knitsql-table">
+<table>
+<caption>Displaying records 1 - 10</caption>
+<colgroup>
+<col width="4%" />
+<col width="2%" />
+<col width="6%" />
+<col width="7%" />
+<col width="8%" />
+<col width="7%" />
+<col width="8%" />
+<col width="8%" />
+<col width="14%" />
+<col width="13%" />
+<col width="7%" />
+<col width="7%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left">Y</th>
+<th align="left">M</th>
+<th align="left">Month</th>
+<th align="right">Deposits</th>
+<th align="right">total_req</th>
+<th align="right">Download</th>
+<th align="right">view_only</th>
+<th align="right">perc_dnld</th>
+<th align="right">Tr_running_total</th>
+<th align="right">D_running_total</th>
+<th align="right">Tr_avg</th>
+<th align="right">D_avg</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">2022</td>
+<td align="left">05</td>
+<td align="left">2022-05</td>
+<td align="right">NA</td>
+<td align="right">1758</td>
+<td align="right">450</td>
+<td align="right">1308</td>
+<td align="right">25.6</td>
+<td align="right">78900</td>
+<td align="right">25148</td>
+<td align="right">2095.143</td>
+<td align="right">547.1429</td>
+</tr>
+<tr class="even">
+<td align="left">2022</td>
+<td align="left">04</td>
+<td align="left">2022-04</td>
+<td align="right">NA</td>
+<td align="right">2515</td>
+<td align="right">812</td>
+<td align="right">1703</td>
+<td align="right">32.3</td>
+<td align="right">77142</td>
+<td align="right">24698</td>
+<td align="right">2242.000</td>
+<td align="right">599.1429</td>
+</tr>
+<tr class="odd">
+<td align="left">2022</td>
+<td align="left">03</td>
+<td align="left">2022-03</td>
+<td align="right">NA</td>
+<td align="right">2144</td>
+<td align="right">487</td>
+<td align="right">1657</td>
+<td align="right">22.7</td>
+<td align="right">74627</td>
+<td align="right">23886</td>
+<td align="right">2183.857</td>
+<td align="right">569.2857</td>
+</tr>
+<tr class="even">
+<td align="left">2022</td>
+<td align="left">02</td>
+<td align="left">2022-02</td>
+<td align="right">NA</td>
+<td align="right">1743</td>
+<td align="right">394</td>
+<td align="right">1349</td>
+<td align="right">22.6</td>
+<td align="right">72483</td>
+<td align="right">23399</td>
+<td align="right">2077.714</td>
+<td align="right">552.7143</td>
+</tr>
+<tr class="odd">
+<td align="left">2022</td>
+<td align="left">01</td>
+<td align="left">2022-01</td>
+<td align="right">NA</td>
+<td align="right">1683</td>
+<td align="right">426</td>
+<td align="right">1257</td>
+<td align="right">25.3</td>
+<td align="right">70740</td>
+<td align="right">23005</td>
+<td align="right">2003.714</td>
+<td align="right">537.4286</td>
+</tr>
+<tr class="even">
+<td align="left">2021</td>
+<td align="left">12</td>
+<td align="left">2021-12</td>
+<td align="right">8</td>
+<td align="right">2099</td>
+<td align="right">559</td>
+<td align="right">1540</td>
+<td align="right">26.6</td>
+<td align="right">69057</td>
+<td align="right">22579</td>
+<td align="right">2096.571</td>
+<td align="right">574.8571</td>
+</tr>
+<tr class="odd">
+<td align="left">2021</td>
+<td align="left">11</td>
+<td align="left">2021-11</td>
+<td align="right">NA</td>
+<td align="right">2724</td>
+<td align="right">702</td>
+<td align="right">2022</td>
+<td align="right">25.8</td>
+<td align="right">66958</td>
+<td align="right">22020</td>
+<td align="right">2088.143</td>
+<td align="right">573.8571</td>
+</tr>
+<tr class="even">
+<td align="left">2021</td>
+<td align="left">10</td>
+<td align="left">2021-10</td>
+<td align="right">NA</td>
+<td align="right">2786</td>
+<td align="right">814</td>
+<td align="right">1972</td>
+<td align="right">29.2</td>
+<td align="right">64234</td>
+<td align="right">21318</td>
+<td align="right">2034.143</td>
+<td align="right">589.5714</td>
+</tr>
+<tr class="odd">
+<td align="left">2021</td>
+<td align="left">09</td>
+<td align="left">2021-09</td>
+<td align="right">NA</td>
+<td align="right">2108</td>
+<td align="right">603</td>
+<td align="right">1505</td>
+<td align="right">28.6</td>
+<td align="right">61448</td>
+<td align="right">20504</td>
+<td align="right">2090.857</td>
+<td align="right">576.2857</td>
+</tr>
+<tr class="even">
+<td align="left">2021</td>
+<td align="left">08</td>
+<td align="left">2021-08</td>
+<td align="right">NA</td>
+<td align="right">1401</td>
+<td align="right">371</td>
+<td align="right">1030</td>
+<td align="right">26.5</td>
+<td align="right">59340</td>
+<td align="right">19901</td>
+<td align="right">2259.143</td>
+<td align="right">580.4286</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div id="determining-date-to-publish-and-pre-publication-tasks"
+class="section level1">
+<h1>Determining date to publish and pre-publication tasks</h1>
+<p>The editorial board turns over each semester, and most work finishes
+during the semester. Therefore, developing an organized sequence of
+tasks leading up to publication within about three months is essential
+to optimizing readership.</p>
+<p>By summarizing engagement within month bins, I can directly address
+the question of when articles should be published to optimize potential
+readership. As it turns out, the end of each semester is the busiest
+(October, November, April), while academic recesses (January, July,
+August) are the slowest.</p>
+<p>Therefore, I recommend having articles ready to publish in April and
+November when students are conducting their literature reviews to
+maximize the immediate impact of any article. Better metrics mean
+happier authors who become repeat authors.</p>
+<pre class="sql"><code>WITH clean_date AS (
+  SELECT
+    SUBSTRING(Month,1,4) AS Y,
+    SUBSTRING(Month,6,2) AS M,
+    *
+  FROM breakdown_by_month
+)
+,
+
+month_average AS (
+  SELECT
+    M AS Month,
+    AVG(total_req) OVER(PARTITION BY M) as month_avg
+  FROM clean_date
+  GROUP BY M
+  ORDER BY month_avg DESC)
+,
+  
+avg_rank AS (
+  SELECT
+    *,
+    RANK() OVER(ORDER BY month_avg) AS month_rank
+  FROM month_average
+  ORDER BY month_rank ASC
+)
+  
+
+SELECT *
+FROM avg_rank
+WHERE month_rank &lt; 4
+UNION
+SELECT *
+FROM avg_rank
+WHERE month_rank &gt; 9
+ORDER BY month_rank ASC;
+</code></pre>
+<div class="knitsql-table">
+<table>
+<caption>6 records</caption>
+<thead>
+<tr class="header">
+<th align="left">Month</th>
+<th align="right">month_avg</th>
+<th align="right">month_rank</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">07</td>
+<td align="right">1225</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td align="left">08</td>
+<td align="right">1401</td>
+<td align="right">2</td>
+</tr>
+<tr class="odd">
+<td align="left">01</td>
+<td align="right">1683</td>
+<td align="right">3</td>
+</tr>
+<tr class="even">
+<td align="left">04</td>
+<td align="right">2515</td>
+<td align="right">10</td>
+</tr>
+<tr class="odd">
+<td align="left">11</td>
+<td align="right">2724</td>
+<td align="right">11</td>
+</tr>
+<tr class="even">
+<td align="left">10</td>
+<td align="right">2786</td>
+<td align="right">12</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div id="personalizing-metrics" class="section level1">
+<h1>Personalizing metrics</h1>
+<p>The editors want a better understanding of the engagement patterns of
+readers but also repeat engagement and buy-in from authors. Informing
+authors of their personal milestones with the journal can be an
+effective way to leverage data and establish regular contact. I provide
+a version of author metrics per article and an overall summary.</p>
+<pre class="sql"><code>
+SELECT
+  a.author,
+  a.Title,
+  i.[Total.requests],
+  IFNULL(i.[X2022.06],0) AS this_month,
+  IFNULL(i.[X2022.05],0) AS last_month,
+  (IFNULL(i.[X2022.06],0) - IFNULL(i.[X2022.05],0)) AS change
+FROM authors_by_item AS a
+LEFT JOIN history_by_item AS i
+ON a.Title = i.Title
+ORDER BY author;
+</code></pre>
+<div class="knitsql-table">
+<table>
+<caption>Displaying records 1 - 10</caption>
+<colgroup>
+<col width="12%" />
+<col width="60%" />
+<col width="9%" />
+<col width="6%" />
+<col width="6%" />
+<col width="4%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left">author</th>
+<th align="left">Title</th>
+<th align="right">Total.requests</th>
+<th align="right">this_month</th>
+<th align="right">last_month</th>
+<th align="right">change</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Alhomady, Acksah</td>
+<td align="left">Christian and Jewish Arab-American Identities Beyond
+September 11</td>
+<td align="right">79</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="left">Allen, Adam</td>
+<td align="left">The Role of Women in Africa: 5000 BCE-Late
+Antiquity</td>
+<td align="right">282</td>
+<td align="right">1</td>
+<td align="right">6</td>
+<td align="right">-5</td>
+</tr>
+<tr class="odd">
+<td align="left">Anthony, Mitchell T.</td>
+<td align="left">Religion and Politics in the Greek Successor States
+after the Fourth Crusade (1204)</td>
+<td align="right">127</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="left">Arredondo, Niko</td>
+<td align="left">The Forgotten Soldiers: Mexican-American Soldiers of
+WWII and the Creation of the G.I. Forum</td>
+<td align="right">3857</td>
+<td align="right">34</td>
+<td align="right">62</td>
+<td align="right">-28</td>
+</tr>
+<tr class="odd">
+<td align="left">Barragan, Ramon</td>
+<td align="left">Reasoning from Race: Feminism, Law and the Civil Rights
+Revolution by Serena Mayeri</td>
+<td align="right">274</td>
+<td align="right">1</td>
+<td align="right">3</td>
+<td align="right">-2</td>
+</tr>
+<tr class="even">
+<td align="left">Barragan, Ramon</td>
+<td align="left">The Nixon Reconfiguration: American Foreign Policy in
+the Middle East, 1969-1974</td>
+<td align="right">143</td>
+<td align="right">2</td>
+<td align="right">2</td>
+<td align="right">0</td>
+</tr>
+<tr class="odd">
+<td align="left">Blondin, Trevor</td>
+<td align="left">Soviet Intervention in Afghanistan, the Saur Revolution
+and the Cold War</td>
+<td align="right">1516</td>
+<td align="right">26</td>
+<td align="right">44</td>
+<td align="right">-18</td>
+</tr>
+<tr class="even">
+<td align="left">Bov<e9>e, Parker</td>
+<td align="left">Shifting Gender Norms Through Cinema: Physical Spaces
+and Cultural Ideals of 1920s Shanghai Cinema</td>
+<td align="right">191</td>
+<td align="right">6</td>
+<td align="right">3</td>
+<td align="right">3</td>
+</tr>
+<tr class="odd">
+<td align="left">Bowman, Rocco</td>
+<td align="left">Review of The Name of War: King Philip’s War and the
+Origins of American Identity</td>
+<td align="right">1564</td>
+<td align="right">0</td>
+<td align="right">3</td>
+<td align="right">-3</td>
+</tr>
+<tr class="even">
+<td align="left">Bowman, Rocco</td>
+<td align="left">Bounded Empires: Ecological and Geographic Implications
+in Sino- Tangut Relations, 960-1127</td>
+<td align="right">899</td>
+<td align="right">8</td>
+<td align="right">16</td>
+<td align="right">-8</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="summarizing-by-author" class="section level2">
+<h2>Summarizing by author</h2>
+<pre class="sql"><code>WITH author_engage AS (
+SELECT
+  a.author,
+  a.Title,
+  i.[Total.requests],
+  IFNULL(i.[X2022.06],0) AS this_month,
+  IFNULL(i.[X2022.05],0) AS last_month,
+  (IFNULL(i.[X2022.06],0) - IFNULL(i.[X2022.05],0)) AS change
+FROM authors_by_item AS a
+LEFT JOIN history_by_item AS i
+ON a.Title = i.Title
+ORDER BY author)
+
+SELECT
+  author,
+  [Total.requests],
+  this_month,
+  last_month,
+  change
+FROM author_engage
+GROUP BY author
+ORDER BY [total.requests] DESC;
+</code></pre>
+<div class="knitsql-table">
+<table>
+<caption>Displaying records 1 - 10</caption>
+<colgroup>
+<col width="34%" />
+<col width="22%" />
+<col width="16%" />
+<col width="16%" />
+<col width="10%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left">author</th>
+<th align="right">Total.requests</th>
+<th align="right">this_month</th>
+<th align="right">last_month</th>
+<th align="right">change</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Racco, Peter</td>
+<td align="right">4884</td>
+<td align="right">57</td>
+<td align="right">101</td>
+<td align="right">-44</td>
+</tr>
+<tr class="even">
+<td align="left">Arredondo, Niko</td>
+<td align="right">3857</td>
+<td align="right">34</td>
+<td align="right">62</td>
+<td align="right">-28</td>
+</tr>
+<tr class="odd">
+<td align="left">Escobar, Summer</td>
+<td align="right">3443</td>
+<td align="right">52</td>
+<td align="right">84</td>
+<td align="right">-32</td>
+</tr>
+<tr class="even">
+<td align="left">Langer, Nicholas</td>
+<td align="right">2750</td>
+<td align="right">63</td>
+<td align="right">53</td>
+<td align="right">10</td>
+</tr>
+<tr class="odd">
+<td align="left">Zetina, Brenda</td>
+<td align="right">2722</td>
+<td align="right">58</td>
+<td align="right">69</td>
+<td align="right">-11</td>
+</tr>
+<tr class="even">
+<td align="left">Moreno, Cecilia</td>
+<td align="right">2164</td>
+<td align="right">23</td>
+<td align="right">81</td>
+<td align="right">-58</td>
+</tr>
+<tr class="odd">
+<td align="left">Lan, Aaron</td>
+<td align="right">1977</td>
+<td align="right">6</td>
+<td align="right">4</td>
+<td align="right">2</td>
+</tr>
+<tr class="even">
+<td align="left">Pirir, Juan Francisco</td>
+<td align="right">1799</td>
+<td align="right">14</td>
+<td align="right">40</td>
+<td align="right">-26</td>
+</tr>
+<tr class="odd">
+<td align="left">Park, Chul Wan Soloman</td>
+<td align="right">1773</td>
+<td align="right">3</td>
+<td align="right">4</td>
+<td align="right">-1</td>
+</tr>
+<tr class="even">
+<td align="left">Ramirez, Maya C.</td>
+<td align="right">1657</td>
+<td align="right">48</td>
+<td align="right">111</td>
+<td align="right">-63</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div id="better-serving-readers-authors-and-editors"
+class="section level1">
+<h1>Better Serving Readers, Authors, and Editors</h1>
+<p>I utilized SQL to better understand website engagement data which, in
+turn, gave me intelligence about how best to serve journal users and
+authors as well as internally organize tasks like marketing, training,
+and reviewing. I found SQL particularly useful when managing the
+relational databases provided by our data provider.</p>
+</div>
+
+
+
+</div>
+</div>
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.odd').parent('tbody').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open');
+  });
+});
+</script>
+
+<!-- code folding -->
+
+<script>
+$(document).ready(function ()  {
+
+    // temporarily add toc-ignore selector to headers for the consistency with Pandoc
+    $('.unlisted.unnumbered').addClass('toc-ignore')
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_');
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

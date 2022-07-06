@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+
+
+
+<title>Finding Clusters in Time Series with R</title>
+
+<script src="site_libs/header-attrs-2.14/header-attrs.js"></script>
+<script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<style>h1 {font-size: 34px;}
+       h1.title {font-size: 38px;}
+       h2 {font-size: 30px;}
+       h3 {font-size: 24px;}
+       h4 {font-size: 18px;}
+       h5 {font-size: 16px;}
+       h6 {font-size: 12px;}
+       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
+       pre:not([class]) { background-color: white }</style>
+<script src="site_libs/jqueryui-1.11.4/jquery-ui.min.js"></script>
+<link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
+<script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<link href="site_libs/highlightjs-9.12.0/default.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+<style type="text/css">code{white-space: pre;}</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+
+
+
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+img {
+  max-width:100%;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+details > summary > p:only-child {
+  display: inline;
+}
+pre code {
+  padding: 0;
+}
+</style>
+
+
+<style type="text/css">
+.dropdown-submenu {
+  position: relative;
+}
+.dropdown-submenu>.dropdown-menu {
+  top: 0;
+  left: 100%;
+  margin-top: -6px;
+  margin-left: -1px;
+  border-radius: 0 6px 6px 6px;
+}
+.dropdown-submenu:hover>.dropdown-menu {
+  display: block;
+}
+.dropdown-submenu>a:after {
+  display: block;
+  content: " ";
+  float: right;
+  width: 0;
+  height: 0;
+  border-color: transparent;
+  border-style: solid;
+  border-width: 5px 0 5px 5px;
+  border-left-color: #cccccc;
+  margin-top: 5px;
+  margin-right: -10px;
+}
+.dropdown-submenu:hover>a:after {
+  border-left-color: #adb5bd;
+}
+.dropdown-submenu.pull-left {
+  float: none;
+}
+.dropdown-submenu.pull-left>.dropdown-menu {
+  left: -100%;
+  margin-left: 10px;
+  border-radius: 6px 0 6px 6px;
+}
+</style>
+
+<script type="text/javascript">
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark it active
+  menuAnchor.tab('show');
+
+  // if it's got a parent navbar menu mark it active as well
+  menuAnchor.closest('li.dropdown').addClass('active');
+
+  // Navbar adjustments
+  var navHeight = $(".navbar").first().height() + 15;
+  var style = document.createElement('style');
+  var pt = "padding-top: " + navHeight + "px; ";
+  var mt = "margin-top: -" + navHeight + "px; ";
+  var css = "";
+  // offset scroll position for anchor links (for fixed navbar)
+  for (var i = 1; i <= 6; i++) {
+    css += ".section h" + i + "{ " + pt + mt + "}\n";
+  }
+  style.innerHTML = "body {" + pt + "padding-bottom: 40px; }\n" + css;
+  document.head.appendChild(style);
+});
+</script>
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "&#xe258;";
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+  background-color: transparent;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<!-- code folding -->
+
+
+
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+@media print {
+.toc-content {
+  /* see https://github.com/w3c/csswg-drafts/issues/4434 */
+  float: right;
+}
+}
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.90em;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+
+</style>
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+<!-- setup 3col/9col grid for toc_float and main content  -->
+<div class="row">
+<div class="col-xs-12 col-sm-4 col-md-3">
+<div id="TOC" class="tocify">
+</div>
+</div>
+
+<div class="toc-content col-xs-12 col-sm-8 col-md-9">
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-bs-toggle="collapse" data-target="#navbar" data-bs-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">MyLabJournal</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="index.html">Home</a>
+</li>
+<li>
+  <a href="SQL.html">SQL</a>
+</li>
+<li>
+  <a href="R.html">R</a>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div id="header">
+
+
+
+<h1 class="title toc-ignore">Finding Clusters in Time Series with R</h1>
+
+</div>
+
+
+<p>I employ the R statistical package often to perform end-to-end data
+analysis from cleaning to visualization. In one case, I was approached
+by the chair of my dissertation committee who, along with a collaborator
+at a different university, were attempting to leverage a novel data set
+into a new article. They had already received comments back from
+reviewers but needed a new approach in order to better understand
+correlations between grain price time series from 1736 to 1911, limit
+the correlations to spatial neighbors, and visualize the strongly
+correlated cities as visual clusters. This article is current under
+review at <em>Social Science History</em>.</p>
+<div id="preparing-the-data" class="section level1">
+<h1>Preparing the data</h1>
+<p>The data in question is a monthly tabulation of high and low grain
+prices for each city. The initial format did not lend itself to easy
+time-series analysis as I wanted each city to be the column headers with
+each row representing a single month’s grain price average.</p>
+<div id="reading-in-data" class="section level2">
+<h2>Reading in data</h2>
+<pre class="r"><code># 1. Read in data ---------------------------------------------------------
+
+  library(readxl)
+  
+  # set whatever folder is holding the data on your machine
+  # setwd(&quot;~/Grain Price Project&quot;)
+  
+  # create a subdirectory to hold all future outputs if none exists
+  if (dir.exists(file.path(getwd(), &#39;output&#39;)) == TRUE) {
+    print(&quot;Sub-directory found&quot;)
+  } else {
+  dir.create(file.path(getwd(), &#39;output&#39;))
+  }</code></pre>
+<pre><code>## [1] &quot;Sub-directory found&quot;</code></pre>
+<pre class="r"><code>  # read in excel spreadsheet
+  price_data &lt;- read_xls(&quot;data/allgrain_W1.xls&quot;)
+  
+  #view data
+  print(head(price_data))</code></pre>
+<pre><code>## # A tibble: 6 × 33
+##   grain prov  W1_ID 地區  糧別     year mo01_lo mo01_hi mo02_lo mo02_hi mo03_lo
+##   &lt;chr&gt; &lt;chr&gt; &lt;chr&gt; &lt;chr&gt; &lt;chr&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;
+## 1 wheat ah    AH    安徽  小麥、…  1738    NA      NA      NA      NA      NA  
+## 2 wheat ah    AH    安徽  小麥、…  1739    79.9   112.     82.2   116.     81.6
+## 3 wheat ah    AH    安徽  小麥、…  1740    NA      NA      NA      NA      NA  
+## 4 wheat ah    AH    安徽  小麥、…  1741    63.5    86.2    64.6    86.3    65.8
+## 5 wheat ah    AH    安徽  小麥、…  1742    85.7   128.     87.8   131.     91.4
+## 6 wheat ah    AH    安徽  小麥、…  1743   102.    140.    104.    142.    105. 
+## # … with 22 more variables: mo03_hi &lt;dbl&gt;, mo04_lo &lt;dbl&gt;, mo04_hi &lt;dbl&gt;,
+## #   mo05_lo &lt;dbl&gt;, mo05_hi &lt;dbl&gt;, mo06_lo &lt;dbl&gt;, mo06_hi &lt;dbl&gt;, mo07_lo &lt;dbl&gt;,
+## #   mo07_hi &lt;dbl&gt;, mo08_lo &lt;dbl&gt;, mo08_hi &lt;dbl&gt;, mo09_lo &lt;dbl&gt;, mo09_hi &lt;dbl&gt;,
+## #   mo10_lo &lt;dbl&gt;, mo10_hi &lt;dbl&gt;, mo11_lo &lt;dbl&gt;, mo11_hi &lt;dbl&gt;, mo12_lo &lt;dbl&gt;,
+## #   mo12_hi &lt;dbl&gt;, yr_lo &lt;dbl&gt;, yr_hi &lt;dbl&gt;, yr_mean &lt;dbl&gt;</code></pre>
+</div>
+<div id="calculating-mean-price-and-pivoting-to-time-series-format"
+class="section level2">
+<h2>Calculating mean price and pivoting to time series format</h2>
+<p>Due to the structure of the initial data, and there being only a
+yearly high, low, and mean, I needed to calculate monthly means and
+arrange these into vectors so that R could recognize them as legitimate
+time series <em>per city</em> rather than binned into months. I also
+filled in the months for each year and a decade column which would help
+binning and aggregating later.</p>
+<pre class="r"><code># 2. Calculate monthly mean prices --------------------------------
+  
+  library(tidyverse)
+  
+  # create vector of months
+  months &lt;- c(&quot;Month1&quot;,&quot;Month2&quot;,&quot;Month3&quot;,&quot;Month4&quot;,&quot;Month5&quot;,&quot;Month6&quot;,&quot;Month7&quot;,&quot;Month8&quot;,&quot;Month9&quot;,&quot;Month10&quot;,&quot;Month11&quot;,&quot;Month12&quot;)
+  
+  # merge the columns to the full data set then make them of a numeric data type
+  price_data[months] &lt;- NA
+  price_data[months] &lt;- sapply(price_data[months], as.numeric)
+  
+  # split data by prefecture
+  split &lt;- price_data %&gt;%
+    group_by(W1_ID) %&gt;%
+    group_split()
+  
+  # iterate through each prefecture and calculate monthly means between month_x high and month_x low columns
+  
+  for (i in 1:length(split)){
+    k &lt;- 6
+    for (j in 34:45) {
+      k &lt;- k + 1
+      low &lt;- split[[i]][,k]
+      k &lt;- k + 1
+      high &lt;- split[[i]][,k]
+      split[[i]][,j] &lt;- ((low + high) / 2)
+      
+    }
+    #print(paste0(&quot;Calculating means for &quot;,split[[i]]$W1_ID[1]))
+  }
+
+  # compile results
+  all_means &lt;- do.call(rbind,split)
+
+  #write.csv(all_means,file = &quot;output/02_monthly_means.csv&quot;, row.names = FALSE)
+
+
+# 3. Reshaping price data into monthly time series ------------------------
+  
+  # stretch year and month labels into long form to make a master list
+  all_ts &lt;- tibble(year = as.character(rep(min(all_means$year):max(all_means$year),each = 12, length = 2112)),
+                   month = as.character(str_pad(rep(1:12,each = 1, length = 2112),2, side = &quot;left&quot;, pad=&quot;0&quot;)))
+  
+  # iterate through each prefecture
+  for (i in unique(all_means$W1_ID)){
+    #print(paste0(&quot;Pivoting &quot;,i))
+    
+    # filter for prefecture id and select for columns of interest
+    pre_slice &lt;- all_means %&gt;% 
+      filter(W1_ID == i) %&gt;%
+      select(c(3,6,34:45))
+    
+    # stretch month-price matrix into vector time series
+    prices &lt;- tibble(prices = as.vector(t(pre_slice[,3:length(pre_slice)])))
+    colnames(prices) &lt;- pre_slice[1,1]
+    
+    # repeat year and month columns for 12 months per year
+    rep &lt;- pre_slice[rep(seq_len(nrow(pre_slice)), each = 12), ]
+    months &lt;- tibble(month = as.character(str_pad(rep(1:12,each = 1, length = nrow(rep)),2, side = &quot;left&quot;, pad=&quot;0&quot;)))
+    years &lt;- tibble(year = as.character(rep$year))
+    
+    # bind years, month, and price columns together for one price per year-month combo
+    prefecture_ts &lt;- bind_cols(years,months,prices)
+    
+    # append prefecture time series to master list
+    all_ts &lt;- left_join(all_ts,prefecture_ts)
+    
+    #print(paste0(&quot;Appending time series &quot;,pre_slice[1,1],&quot;...&quot;))
+    
+  }    
+
+  # removing first few years since it is a NA-laden half-decade
+  all_ts_trim &lt;- all_ts %&gt;%
+    filter(year &gt;= 1740 &amp; year &lt;= 1909)
+  
+  number_of_decades &lt;- nrow(all_ts_trim) / 120  
+
+  # fill in decade info
+  all_ts_decade &lt;- all_ts_trim %&gt;%
+    mutate(decade = str_pad(rep(1:17,each = 120),2, side = &quot;left&quot;,&quot;0&quot;),
+           .after = month)  
+  
+  # write out the time series series
+  #write.csv(all_ts_decade, file = &quot;output/03_full_time_series.csv&quot;, row.names = FALSE)</code></pre>
+<p><strong>Now the data is in the format I want.</strong></p>
+<pre class="r"><code>print(tail(all_ts_decade))</code></pre>
+<pre><code>## # A tibble: 6 × 342
+##   year  month decade    AH AH001 AH007 AH013 AH016 AH023 AH025 AH027 AH033 AH036
+##   &lt;chr&gt; &lt;chr&gt; &lt;chr&gt;  &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
+## 1 1909  07    17      226.   220  212.   192  202.   255   215   270  214.  242 
+## 2 1909  08    17      224.   220  198.   192  192.   250   215   270  214.  242 
+## 3 1909  09    17      224.   220  203    192  192.   250   215   270  214.  242 
+## 4 1909  10    17      227.   226  208.   192  206.   250   215   270  214.  242 
+## 5 1909  11    17      228.   230  208.   197  214.   250   215   270  214.  242 
+## 6 1909  12    17      227.   236  208.   200  214.   250   215   261  198   246.
+## # … with 329 more variables: AH041 &lt;dbl&gt;, AH047 &lt;dbl&gt;, AH051 &lt;dbl&gt;,
+## #   AH054 &lt;dbl&gt;, FJ &lt;dbl&gt;, FJ001 &lt;dbl&gt;, FJ006 &lt;dbl&gt;, FJ016 &lt;dbl&gt;, FJ022 &lt;dbl&gt;,
+## #   FJ025 &lt;dbl&gt;, FJ032 &lt;dbl&gt;, FJ036 &lt;dbl&gt;, FJ043 &lt;dbl&gt;, FJ051 &lt;dbl&gt;,
+## #   FJ053 &lt;dbl&gt;, FJ059 &lt;dbl&gt;, FJ062 &lt;dbl&gt;, FT93162 &lt;dbl&gt;, FT93166 &lt;dbl&gt;,
+## #   FT93167 &lt;dbl&gt;, GD &lt;dbl&gt;, GD001 &lt;dbl&gt;, GD011 &lt;dbl&gt;, GD012 &lt;dbl&gt;,
+## #   GD013 &lt;dbl&gt;, GD019 &lt;dbl&gt;, GD032 &lt;dbl&gt;, GD042 &lt;dbl&gt;, GD047 &lt;dbl&gt;,
+## #   GD050 &lt;dbl&gt;, GD052 &lt;dbl&gt;, GD053 &lt;dbl&gt;, GD056 &lt;dbl&gt;, GD059 &lt;dbl&gt;, …</code></pre>
+</div>
+</div>
+<div id="correlating-price-time-series" class="section level1">
+<h1>Correlating price time series</h1>
+<p>With the grain prices now a collection of time series where each city
+has its own series, I calculated the correlation each was to each other
+in pair-wise fashion. Although this has been done using a standard
+Pearson correlation test, that test makes less sense as-is for time
+series, especially because we were interested in the similarity of the
+price dynamics rather than absolute values. This is important because
+market regions have suppliers and consumers, where supply-heavy areas
+have lower prices and consumer-heavy areas have high prices but each
+should affect the other.</p>
+<p><img src="images/why_not_pearson.png" /></p>
+<div id="filtering-data-and-joining-to-shapfile" class="section level2">
+<h2>Filtering data and joining to shapfile</h2>
+</div>
+</div>
+<div id="calcualting-correlations" class="section level1">
+<h1>Calcualting correlations</h1>
+<pre class="r"><code># 2. Calculating correlation matrix ---------------------------------------
+
+  # Unnecessary if you already have the correlation data to load in!
+
+   all_tests &lt;- tibble() # Creates an empty set to collect info on all pairwise correlations
+   
+   # Calculate pearson and cross correlations for each pairwise match of time series
+   for (i in 1:length(data_filter)) {
+     print(paste0(i,&quot;/&quot;,length(data_filter)))
+     col1 &lt;- data_filter[[i]]
+     col1_name &lt;- colnames(data_filter[i])
+     auto_exclude &lt;- data_filter %&gt;% select(-i)
+     for (j in 1:length(auto_exclude)){
+       print(paste0(j,&quot;/&quot;,length(auto_exclude)))
+       col2 &lt;- auto_exclude[[j]]
+       col2_name &lt;- colnames(auto_exclude[j])
+   
+       no_na &lt;- tibble(x = col1, y = col2) %&gt;%
+         drop_na()
+   
+       if (nrow(no_na) &lt; 10) {
+         next
+       }
+   
+       ptest &lt;- cor.test(no_na$x, no_na$y, method = &quot;pearson&quot;, na.action = &quot;na.omit&quot;)
+       model &lt;- summary(lm(no_na$y ~ no_na$x))
+   
+       ts1 &lt;- ts(no_na$x)
+       ts2 &lt;- ts(no_na$y)
+   
+       diff1 &lt;- diff(ts1)
+       diff2 &lt;- diff(ts2)
+   
+       ccf &lt;- ccf(diff1, diff2, ylab = &quot;Cross-correlation&quot;, plot = FALSE)
+       ccf2 &lt;- tibble(lag = ccf$lag, acf = ccf$acf) %&gt;%
+         filter(lag &gt; -2 &amp; lag &lt; 2)
+       cc_p_val &lt;- 2 * (1 - pnorm(abs(ccf2$acf[2]), mean = 0, sd = 1/sqrt(ccf$n.used)))
+   
+       test_info &lt;- tibble(x = col1_name,
+                           y = col2_name,
+                           t_stat_p = ptest[[1]],
+                           df_p = ptest[[2]],
+                           p_p = ptest[[3]],
+                           r_p = ptest[[4]],
+                           adj_r2 = model$adj.r.squared,
+                           alt_p = ptest[[6]],
+                           cc_before = ccf2$acf[1],
+                           cc_same = ccf2$acf[2],
+                           cc_after = ccf2$acf[3],
+                           cc_p = cc_p_val)
+   
+   
+       all_tests &lt;- bind_rows(all_tests, test_info)
+     }
+   }
+   
+    all_tests$diff &lt;- abs(all_tests$r_p - all_tests$cc_same)
+    
+  #  write.csv(all_tests, &quot;output/all_tests_before_1842.csv&quot;, row.names = FALSE)
+   
+  # transform correlation results into a matrix (to be multiplied to weight matrix later)
+  tests_wider &lt;- pivot_wider(all_tests %&gt;% select(x,y,cc_same), names_from = y, values_from = cc_same)
+  rownames &lt;- tests_wider$x
+  tests_wider &lt;- tests_wider %&gt;%
+    select(-1)
+  tests_mat &lt;- as.matrix(tests_wider)
+  rownames(tests_mat) &lt;- rownames</code></pre>
+</div>
+<div id="determining-spatial-neighbors" class="section level1">
+<h1>Determining spatial neighbors</h1>
+<p>I then filtered the data spatially so that only adjacent cities (as
+determined by their Thiessen polygon envelopes) would be considered
+rather than all 40,000+ correlations.</p>
+<pre class="r"><code>  library(spdep) 
+  library(tmap) 
+
+# 3. Analysis parameters --------------------------------------------------
+
+  # set the cutoff for cluster size (anything smaller than X)
+  min_cluster_size &lt;- 5 
+  
+  # set the cut-off level for correlation coefficients (higher means stricter filter)
+  sig_level &lt;- 0 
+  
+
+# 4. Generating spatial weights matrix and filtering final data -----------
+
+  print(&quot;Generating spatial weights matrix...&quot;)</code></pre>
+<pre><code>## [1] &quot;Generating spatial weights matrix...&quot;</code></pre>
+<pre class="r"><code>  # convert shapefile back to sp and generate spatial adjacency matrix
+  shp_trim_sp &lt;- as(shp_trim, &quot;Spatial&quot;)
+  
+  queen &lt;- poly2nb(shp_trim_sp, queen = TRUE)
+  xy &lt;- coordinates(shp_trim_sp)
+
+  plot(thiessen_sp, col=&#39;white&#39;, border=&#39;grey&#39;, lwd=2)
+  plot(queen, xy, col=&#39;black&#39;, lwd=2, add = TRUE)</code></pre>
+<p><img src="R_files/figure-html/unnamed-chunk-7-1.png" width="672" /></p>
+<pre class="r"><code>  cardinality &lt;- card(queen)
+  hist(cardinality, main = paste0(&quot;Histogram of Neighbor Linkages\nMean = &quot;,round(mean(cardinality), 2)), xlab = &quot;Number of Neighbors&quot;)</code></pre>
+<p><img src="R_files/figure-html/unnamed-chunk-7-2.png" width="672" /></p>
+<pre class="r"><code>  wm &lt;- nb2mat(queen, style=&#39;B&#39;, zero.policy = TRUE)
+  colnames(wm) &lt;- colnames(data_filter)
+  rownames(wm) &lt;- colnames(data_filter)
+
+  # arrange matrix of correlation data into long format
+  tests_longer &lt;- melt(tests_mat)
+  tests_longer$Var1 &lt;- as.character(tests_longer$Var1)
+  tests_longer$Var2 &lt;- as.character(tests_longer$Var2)
+  tests_longer &lt;- tests_longer %&gt;% arrange(Var1, Var2)
+  
+  # Plot histogram of all correlation coefficients
+  hist(tests_longer$value, main = &quot;Histogram of all Cross-correlation Coefficients\nn = 43264&quot;, xlim = c(-1,1), xlab = &quot;Coefficient&quot;)</code></pre>
+<p><img src="R_files/figure-html/unnamed-chunk-7-3.png" width="672" /></p>
+<pre class="r"><code>  # arrange weight matrix into long format
+  wm_longer &lt;- melt(wm)
+  wm_longer$Var1 &lt;- as.character(wm_longer$Var1)
+  wm_longer$Var2 &lt;- as.character(wm_longer$Var2)
+  wm_longer &lt;- wm_longer %&gt;% arrange(Var1, Var2)
+  colnames(wm_longer) &lt;- c(&quot;x&quot;,&quot;y&quot;,&quot;adj&quot;)
+  
+  # Connecting isolates to nearest neighbor
+  
+    # Taiwan
+    wm_longer$adj[wm_longer$x == &quot;FJ036&quot; &amp; wm_longer$y == &quot;FJ025&quot;] &lt;- 1
+    
+    # Manchuria
+    wm_longer$adj[wm_longer$x == &quot;SJ019&quot; &amp; wm_longer$y == &quot;SJ001&quot;] &lt;- 1  
+
+
+  print(&quot;Applying weight matrix and other filters...&quot;)</code></pre>
+<pre><code>## [1] &quot;Applying weight matrix and other filters...&quot;</code></pre>
+<pre class="r"><code>  # filter out only positive correlations and those over the chosen threshold (networks don&#39;t like negative ones)
+  combine &lt;- all_tests %&gt;%
+    left_join(wm_longer)
+  combine_neighbors &lt;- combine %&gt;% 
+    filter(adj &gt; 0)
+  combine_significant &lt;- combine_neighbors %&gt;% 
+    filter(cc_p &lt; 0.05)
+  combine_positive &lt;- combine_significant %&gt;%  
+    filter(cc_same &gt; 0)
+  
+    # grab a significance level based on quantiles
+  # sig_level &lt;- quantile(positive_coef$coef, na.rm = TRUE)[[1]] # set the cutoff for correlation coefficient filter (anything smaller or equal to 4th quintile)
+  
+  only_sig &lt;- combine_positive %&gt;%
+    filter(cc_same &gt;= sig_level)
+  
+  no_duplicates &lt;- only_sig %&gt;%
+    mutate(normalized = map2_chr(x, y, ~paste(sort(c(.x, .y)), collapse = &quot;&quot;))) %&gt;%
+    group_by(normalized) %&gt;%
+    summarise(x = first(x),
+                     y = first(y)) %&gt;%
+    select(-normalized) %&gt;% 
+    left_join(all_tests)
+  
+  hist(no_duplicates$cc_same, xlab = &quot;Coefficent&quot;, main = &quot;Histogram of Corr. Coefficients for Pre-1842&quot;)</code></pre>
+<p><img src="R_files/figure-html/unnamed-chunk-7-4.png" width="672" /></p>
+<pre class="r"><code>  write.csv(no_duplicates, &quot;output/05_network_edges.csv&quot;, row.names = FALSE)</code></pre>
+</div>
+<div id="finding-market-clusters" class="section level1">
+<h1>Finding market clusters</h1>
+<p>Finally, once the data was properly formatted, filtered, and
+spatialized, I could then create a network of correlations between
+cities based on their grain price time series and use the Louvain
+community detection algorithm to find which spatial neighbors were most
+alike as a group.</p>
+<pre class="r"><code>library(igraph)
+library(tmap)
+
+# 5. Creating network graph and detecting communities ---------------------
+
+  print(&quot;Generating network graph and detecting communities...&quot;)</code></pre>
+<pre><code>## [1] &quot;Generating network graph and detecting communities...&quot;</code></pre>
+<pre class="r"><code>  # drawing paths between nodes and creating undirected graph object
+  initial_graph &lt;- graph_from_data_frame(no_duplicates,
+                                         directed = FALSE)
+  weighted_graph &lt;- set_edge_attr(initial_graph,
+                                  &quot;weight&quot;,
+                                  value = no_duplicates$cc_same)
+  
+  # applying Louvin community detection algorithm to find clusters in the graph
+  community &lt;- cluster_louvain(weighted_graph,
+                               weights = E(weighted_graph)$weight)
+  algorithm &lt;- algorithm(community)
+  modularity &lt;- round(modularity(community),2)
+  transitivity &lt;- transitivity(weighted_graph,
+                               type = &quot;global&quot;,
+                               weights = E(weighted_graph)$weight)
+  
+  cluster_id &lt;- tibble(
+    W1_ID = community$names,
+    cluster = as.factor(community$membership)
+    )
+  
+  # trim clusters that are too small
+  only_big &lt;- cluster_id %&gt;% 
+    group_by(cluster) %&gt;% 
+    filter(n() &gt;= min_cluster_size)
+  
+  # join graph data to shapefile
+  cluster_spatial &lt;- thiessen_sf %&gt;%
+    right_join(only_big)
+  
+  # reproject shapefile to Asia North Albers Equal Area Conic
+  cp_t &lt;- st_transform(cluster_spatial, &quot;ESRI:102025&quot;)
+  
+  # intersecting Skinner&#39;s physiographic macroregion names with clustered prefectures
+  pmr_transform &lt;- st_transform(physiographic_macroregions,
+                                crs = &quot;ESRI:102025&quot;)
+  union &lt;- st_intersection(cp_t, pmr_transform) 
+  cluster_union &lt;- cluster_spatial %&gt;%
+    left_join(st_drop_geometry(union), by = c(&quot;W1_ID&quot;,&quot;cluster&quot;))
+  
+  # rename clusters based on their pmr locations
+  rename &lt;- st_drop_geometry(cluster_union) %&gt;%
+    group_by(cluster) %&gt;%
+    count(SYS_NAME) %&gt;%
+    top_n(1) %&gt;%
+    arrange(SYS_NAME)
+  
+  print(&quot;Naming split clusters&quot;)</code></pre>
+<pre><code>## [1] &quot;Naming split clusters&quot;</code></pre>
+<pre class="r"><code>  rename$name_dup &lt;- duplicated(rename$SYS_NAME)
+  rename$clust_dup &lt;- duplicated(rename$cluster)
+  rename$na &lt;- rowSums(is.na(rename))
+  
+  dup_counter &lt;- 1
+  for (i in 1:nrow(rename)){
+    if (rename$na[i] == 1){
+      rename$SYS_NAME[i] &lt;- &quot;Xinjiang*&quot;
+    }
+    if (rename$name_dup[i] == TRUE){
+      dup_counter &lt;- dup_counter + 1
+      rename$SYS_NAME[i] &lt;- paste0(rename$SYS_NAME[i],&quot;_&quot;,dup_counter)
+    } else {
+      dup_counter &lt;- 1
+    }
+    print(rename$SYS_NAME[i])
+  }</code></pre>
+<pre><code>## [1] &quot;Gan Basin&quot;
+## [1] &quot;Lingnan&quot;
+## [1] &quot;Lower Yangzi&quot;
+## [1] &quot;Lower Yangzi_2&quot;
+## [1] &quot;Middle Yangzi proper&quot;
+## [1] &quot;Min Basin&quot;
+## [1] &quot;North China&quot;
+## [1] &quot;North China_2&quot;
+## [1] &quot;North China_3&quot;
+## [1] &quot;Upper Yangzi&quot;
+## [1] &quot;Wei-Fen Basins&quot;
+## [1] &quot;Yungui&quot;</code></pre>
+<pre class="r"><code>  rename_drop_tie &lt;- rename %&gt;%
+    filter(clust_dup == FALSE)
+  
+  # join final results to shapefile and convert cluster info to factors
+  clusters_complete &lt;- cluster_spatial %&gt;%
+    left_join(rename_drop_tie) %&gt;%
+    drop_na()
+  clusters_complete$Market_Name &lt;- as.factor(clusters_complete$SYS_NAME)
+  clusters_complete$cluster &lt;- as.factor(as.numeric(clusters_complete$SYS_NAME))
+  
+  print(&quot;Plotting clusters...&quot;)</code></pre>
+<pre><code>## [1] &quot;Plotting clusters...&quot;</code></pre>
+<pre class="r"><code>  # plot prefectures with cluster membership
+  tm_shape(thiessen_sf)+
+      tm_borders() +
+  tm_shape(clusters_complete) +
+      tm_polygons(col = &quot;Market_Name&quot;, border.col = &quot;white&quot;) +
+      tm_layout(title = &quot;Louvain Communities Pre-1842&quot;,
+                legend.bg.color = &quot;white&quot;,
+                legend.frame = &quot;black&quot;,
+                legend.outside = TRUE)</code></pre>
+<p><img src="R_files/figure-html/unnamed-chunk-8-1.png" width="672" /></p>
+</div>
+<div id="comparison-to-other-market-clusters" class="section level1">
+<h1>Comparison to other market clusters</h1>
+<p>This research was even more interesting because I was helping to test
+an empirical approach to one that was also empirical but also
+black-boxed by its author William Skinner whose way of splitting up
+historical China by physical geography has been a mainstay for decades.
+In this way, this workflow allows anyone with access to the data to
+create new approaches to determining market regions using programming
+rather than years of meticulous calculations by hand like Skinner
+performed. Now if I plot Skinner’s regions as outlines over mine, they
+are similar in some ways but different in many places! This was the main
+finding of the study.</p>
+<pre class="r"><code># plot prefectures with cluster membership
+  tm_shape(thiessen_sf)+
+      tm_borders() +
+  tm_shape(clusters_complete) +
+      tm_polygons(col = &quot;Market_Name&quot;, border.col = &quot;white&quot;) +
+  tm_shape(physiographic_macroregions) +
+      tm_borders(lwd = 2, col = &quot;black&quot;) +
+      tm_layout(title = &quot;Louvain Communities Pre-1842&quot;,
+                legend.bg.color = &quot;white&quot;,
+                legend.frame = &quot;black&quot;,
+                legend.outside = TRUE)</code></pre>
+<p><img src="R_files/figure-html/unnamed-chunk-9-1.png" width="672" /></p>
+</div>
+
+
+
+</div>
+</div>
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.odd').parent('tbody').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open');
+  });
+});
+</script>
+
+<!-- code folding -->
+
+<script>
+$(document).ready(function ()  {
+
+    // temporarily add toc-ignore selector to headers for the consistency with Pandoc
+    $('.unlisted.unnumbered').addClass('toc-ignore')
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_');
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

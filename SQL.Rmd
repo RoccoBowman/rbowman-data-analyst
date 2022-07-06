@@ -1,0 +1,244 @@
+---
+title: "Increasing Web Engagement and Organization with SQL"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    collapsed: false
+    number_sections: false
+    toc_depth: 1
+    #code_folding: hide
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message=FALSE,warning=FALSE, cache=FALSE)
+knitr::opts_knit$set(root.dir = "C:/Users/bowma/Documents/data_analyst_portfolio")
+```
+
+I employ SQL while consulting for UC Merced's only specialized undergraduate research journal---The Undergraduate Historical Journal (UHJ), which I and a small band of dedicated students founded in 2013. Successive generations of undergraduates continue to manage this online, open-access journal and submit articles for peer-review and publication. While I am no longer an editor, I still summarize and analyze web traffic data and make recommendations to the editorial board.
+
+Data provided by the publication platform eScholarship, along with careful analysis, gives me the intelligence I need to recommend policies that best serve readers and authors. Web traffic also informs recommendations about optimal times to publish and, in turn, when and how to sequence pre-publication tasks such as marketing, editing, designing, and formatting.
+
+```{r, echo=FALSE, out.width="33%", fig.align = "center", fig.show='hold', fig.cap="Just a couple of the journal covers for issues 1(1) and 4(1). You can find out more about the journal at https://escholarship.org/uc/ssha_uhj"}
+knitr::include_graphics(
+  c("https://escholarship.org/cms-assets/3c651818be453391275b9a78a0895852f3aea07d3c4cf5e7d3d55e5363578928",
+    "https://escholarship.org/cms-assets/58e3c503349279633e9a77ca12f433a5ab7424136295b500cfd7224d081a3dba")
+)
+```
+
+# Preparing data
+
+I always start by looking at the overall engagement data for the latest month compared to previous months to get a quick read on how the journal is doing. The raw data provided by eScholarship does not fit the needs of the editors out-of-the-box so viewing and cleaning is necessary.
+
+-   Month
+-   Deposits (\# of articles published for the month)
+-   total_requests (downloads + view only)
+-   downloads (number of articles downloaded
+-   view_only (number of views but no downloads)
+-   perc_downloads (ratio of downloads to total engagement)
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+#loading in required data
+breakdown_by_month <- read.csv("data/breakdown_by_month.csv")
+authors_by_item <- read.csv("data/authors_by_item.csv")
+history_by_item <- read.csv("data/history_by_item.csv")
+```
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+library(DBI)
+library(RSQLite)
+
+con <- DBI::dbConnect(RSQLite::SQLite(), 
+        dbname = "uhj.sqlite")
+
+dbWriteTable(con,
+    "breakdown_by_month", # table will be named transit_cost
+    breakdown_by_month, # df being written
+    overwrite = TRUE)
+dbWriteTable(con,
+    "authors_by_item",
+    authors_by_item,
+    overwrite = TRUE)
+dbWriteTable(con,
+    "history_by_item",
+    history_by_item,
+    overwrite = TRUE)
+
+# Make a connection
+uhj_con <- dbConnect(RSQLite::SQLite(), "uhj.sqlite")
+# List tables in DB
+dbListTables(uhj_con)
+```
+
+```{sql connection=uhj_con, include=FALSE}
+
+-- This is a SQL comment
+-- Notice our connection is the ttr_con we established
+-- in the {r} code chunk earlier.
+
+ALTER TABLE breakdown_by_month
+RENAME COLUMN [Total.requests] TO total_req;
+
+```
+
+```{sql connection=uhj_con, include=FALSE}
+ALTER TABLE breakdown_by_month
+RENAME COLUMN [View.only] TO view_only;
+
+```
+
+```{sql connection=uhj_con, include=FALSE}
+ALTER TABLE breakdown_by_month
+RENAME COLUMN [X.Dnld] TO perc_dnld;
+
+```
+
+```{sql connection=uhj_con}
+SELECT * 
+FROM breakdown_by_month
+ORDER BY Month DESC
+LIMIT 10;
+
+```
+
+## Transforming the date column
+
+We can see that the only time stamp for this databases is a concatenation of a four-character year and a two-character month such as 2022-05. If we want to perform queries with temporal partitions, it would be best to create both a year and a month column. This will also allow us to get a better read on seasonality by comparing, for example, all July data to inspect whether low total are normal or anomalous.
+
+```{sql connection=uhj_con}
+SELECT
+  SUBSTRING(Month,1,4) AS Y,
+  SUBSTRING(Month,6,2) AS M,
+  *
+FROM breakdown_by_month
+
+```
+
+# Keeping tabs on overall engagement
+
+Keeping editors updated on month-over-month or year-over-year engagement is vital because it provides the highest level summary of product fitness---are the numbers up or down? How many engagements have the journal accumulated to date? And what is the average engagement for each month?
+
+```{sql connection=uhj_con}
+
+WITH clean_date AS (
+SELECT
+  SUBSTRING(Month,1,4) AS Y,
+  SUBSTRING(Month,6,2) AS M,
+  *
+FROM breakdown_by_month
+)
+
+
+SELECT
+  *,
+	SUM(total_req) OVER(ORDER BY Month
+		ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS Tr_running_total,
+	SUM(Download) OVER(ORDER BY Month
+		ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS D_running_total,
+	AVG(total_req) OVER(ORDER BY Month
+		ROWS BETWEEN 6 PRECEDING AND CURRENT ROW) AS Tr_avg,
+	AVG(Download) OVER(ORDER BY Month
+		ROWS BETWEEN 6 PRECEDING AND CURRENT ROW) AS D_avg
+FROM clean_date
+ORDER BY Month DESC;
+
+```
+
+# Determining date to publish and pre-publication tasks
+
+The editorial board turns over each semester, and most work finishes during the semester. Therefore, developing an organized sequence of tasks leading up to publication within about three months is essential to optimizing readership.
+
+By summarizing engagement within month bins, I can directly address the question of when articles should be published to optimize potential readership. As it turns out, the end of each semester is the busiest (October, November, April), while academic recesses (January, July, August) are the slowest.
+
+Therefore, I recommend having articles ready to publish in April and November when students are conducting their literature reviews to maximize the immediate impact of any article. Better metrics mean happier authors who become repeat authors.
+
+```{sql connection=uhj_con}
+WITH clean_date AS (
+  SELECT
+    SUBSTRING(Month,1,4) AS Y,
+    SUBSTRING(Month,6,2) AS M,
+    *
+  FROM breakdown_by_month
+)
+,
+
+month_average AS (
+  SELECT
+    M AS Month,
+    AVG(total_req) OVER(PARTITION BY M) as month_avg
+  FROM clean_date
+  GROUP BY M
+  ORDER BY month_avg DESC)
+,
+  
+avg_rank AS (
+  SELECT
+    *,
+    RANK() OVER(ORDER BY month_avg) AS month_rank
+  FROM month_average
+  ORDER BY month_rank ASC
+)
+  
+
+SELECT *
+FROM avg_rank
+WHERE month_rank < 4
+UNION
+SELECT *
+FROM avg_rank
+WHERE month_rank > 9
+ORDER BY month_rank ASC;
+
+```
+
+# Personalizing metrics
+
+The editors want a better understanding of the engagement patterns of readers but also repeat engagement and buy-in from authors. Informing authors of their personal milestones with the journal can be an effective way to leverage data and establish regular contact. I provide a version of author metrics per article and an overall summary.
+
+```{sql connection=uhj_con}
+
+SELECT
+  a.author,
+  a.Title,
+  i.[Total.requests],
+  IFNULL(i.[X2022.06],0) AS this_month,
+  IFNULL(i.[X2022.05],0) AS last_month,
+  (IFNULL(i.[X2022.06],0) - IFNULL(i.[X2022.05],0)) AS change
+FROM authors_by_item AS a
+LEFT JOIN history_by_item AS i
+ON a.Title = i.Title
+ORDER BY author;
+
+```
+
+## Summarizing by author
+
+```{sql connection=uhj_con}
+WITH author_engage AS (
+SELECT
+  a.author,
+  a.Title,
+  i.[Total.requests],
+  IFNULL(i.[X2022.06],0) AS this_month,
+  IFNULL(i.[X2022.05],0) AS last_month,
+  (IFNULL(i.[X2022.06],0) - IFNULL(i.[X2022.05],0)) AS change
+FROM authors_by_item AS a
+LEFT JOIN history_by_item AS i
+ON a.Title = i.Title
+ORDER BY author)
+
+SELECT
+  author,
+  [Total.requests],
+  this_month,
+  last_month,
+  change
+FROM author_engage
+GROUP BY author
+ORDER BY [total.requests] DESC;
+
+```
+
+# Better Serving Readers, Authors, and Editors
+
+I utilized SQL to better understand website engagement data which, in turn, gave me intelligence about how best to serve journal users and authors as well as internally organize tasks like marketing, training, and reviewing. I found SQL particularly useful when managing the relational databases provided by our data provider.
