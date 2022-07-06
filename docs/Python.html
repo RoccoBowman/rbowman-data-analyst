@@ -1,0 +1,1180 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+
+
+
+<title>Finding Clusters in Time Series with R</title>
+
+<script src="site_libs/header-attrs-2.14/header-attrs.js"></script>
+<script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<style>h1 {font-size: 34px;}
+       h1.title {font-size: 38px;}
+       h2 {font-size: 30px;}
+       h3 {font-size: 24px;}
+       h4 {font-size: 18px;}
+       h5 {font-size: 16px;}
+       h6 {font-size: 12px;}
+       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
+       pre:not([class]) { background-color: white }</style>
+<script src="site_libs/jqueryui-1.11.4/jquery-ui.min.js"></script>
+<link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
+<script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<link href="site_libs/highlightjs-9.12.0/default.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+<style type="text/css">code{white-space: pre;}</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+
+
+
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+img {
+  max-width:100%;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+details > summary > p:only-child {
+  display: inline;
+}
+pre code {
+  padding: 0;
+}
+</style>
+
+
+<style type="text/css">
+.dropdown-submenu {
+  position: relative;
+}
+.dropdown-submenu>.dropdown-menu {
+  top: 0;
+  left: 100%;
+  margin-top: -6px;
+  margin-left: -1px;
+  border-radius: 0 6px 6px 6px;
+}
+.dropdown-submenu:hover>.dropdown-menu {
+  display: block;
+}
+.dropdown-submenu>a:after {
+  display: block;
+  content: " ";
+  float: right;
+  width: 0;
+  height: 0;
+  border-color: transparent;
+  border-style: solid;
+  border-width: 5px 0 5px 5px;
+  border-left-color: #cccccc;
+  margin-top: 5px;
+  margin-right: -10px;
+}
+.dropdown-submenu:hover>a:after {
+  border-left-color: #adb5bd;
+}
+.dropdown-submenu.pull-left {
+  float: none;
+}
+.dropdown-submenu.pull-left>.dropdown-menu {
+  left: -100%;
+  margin-left: 10px;
+  border-radius: 6px 0 6px 6px;
+}
+</style>
+
+<script type="text/javascript">
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark it active
+  menuAnchor.tab('show');
+
+  // if it's got a parent navbar menu mark it active as well
+  menuAnchor.closest('li.dropdown').addClass('active');
+
+  // Navbar adjustments
+  var navHeight = $(".navbar").first().height() + 15;
+  var style = document.createElement('style');
+  var pt = "padding-top: " + navHeight + "px; ";
+  var mt = "margin-top: -" + navHeight + "px; ";
+  var css = "";
+  // offset scroll position for anchor links (for fixed navbar)
+  for (var i = 1; i <= 6; i++) {
+    css += ".section h" + i + "{ " + pt + mt + "}\n";
+  }
+  style.innerHTML = "body {" + pt + "padding-bottom: 40px; }\n" + css;
+  document.head.appendChild(style);
+});
+</script>
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "&#xe258;";
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+  background-color: transparent;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<!-- code folding -->
+
+
+
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+@media print {
+.toc-content {
+  /* see https://github.com/w3c/csswg-drafts/issues/4434 */
+  float: right;
+}
+}
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.90em;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+
+</style>
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+<!-- setup 3col/9col grid for toc_float and main content  -->
+<div class="row">
+<div class="col-xs-12 col-sm-4 col-md-3">
+<div id="TOC" class="tocify">
+</div>
+</div>
+
+<div class="toc-content col-xs-12 col-sm-8 col-md-9">
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-bs-toggle="collapse" data-target="#navbar" data-bs-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">Rocco Bowman</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="index.html">Home</a>
+</li>
+<li>
+  <a href="SQL.html">SQL</a>
+</li>
+<li>
+  <a href="R.html">R</a>
+</li>
+<li>
+  <a href="Python.html">Python</a>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div id="header">
+
+
+
+<h1 class="title toc-ignore">Finding Clusters in Time Series with R</h1>
+
+</div>
+
+
+<div id="cleaning-and-transforming-data-for-insight"
+class="section level1">
+<h1>Cleaning and transforming data for insight</h1>
+<p>I can also employ Python for data cleaning and transformation work as
+well as any time I need to interface with another software such as
+ArcGIS or QGIS. Here, I will demonstrate how I used Python to clean and
+prepare census data for joining to spatial points, then use a script
+within QGIS to transform that census data and other spatial features
+into insights about demographics. This study was interested in
+estimating the clerical population for historical Tibet.</p>
+<p>The article can be found <a
+href="https://himalaya.socanth.cam.ac.uk/collections/journals/ret/pdf/ret_61_06.pdf"
+title="Go">here</a>.</p>
+<pre class="python"><code>import os
+import pandas as pd
+import seaborn as sb
+
+# Setting Working Directory
+#os.chdir(r&quot;C:\Users\bowma\Documents\Monk Census Project\Data&quot;)
+#os.getcwd()
+
+# Load Monk census data
+CTMdata = pd.DataFrame(pd.read_excel(r&quot;C:\Users\bowma\Documents\data_analyst_portfolio\data\CentralTibetListOfMonasteriesTseringEnteredNov2005.xls&quot;))
+print (CTMdata)
+
+# Remove unwanted columns</code></pre>
+<pre><code>##                   ས་གནས། GIS ID  ... བཙུན་མའི་གྲངས་འབོར། ཟུར་བཀོད་མཆན།
+## 0     འཕྱོངས་རྒྱས་རྫོང་།      1  ...                 NaN           NaN
+## 1     འཕྱོངས་རྒྱས་རྫོང་།      1  ...                 NaN           NaN
+## 2     འཕྱོངས་རྒྱས་རྫོང་།      1  ...                 NaN           NaN
+## 3     འཕྱོངས་རྒྱས་རྫོང་།      1  ...                 NaN           NaN
+## 4     འཕྱོངས་རྒྱས་རྫོང་།      1  ...                 NaN           NaN
+## ...                  ...    ...  ...                 ...           ...
+## 1991        ཞོང་ཁ་རྫོང་།    NaN  ...                41.0           NaN
+## 1992        ཞོང་ཁ་རྫོང་།    NaN  ...                12.0           NaN
+## 1993        ཞོང་ཁ་རྫོང་།    NaN  ...                 4.0           NaN
+## 1994        ཞོང་ཁ་རྫོང་།    NaN  ...                28.0           NaN
+## 1995        ཞོང་ཁ་རྫོང་།    NaN  ...                22.0           NaN
+## 
+## [1996 rows x 8 columns]</code></pre>
+<pre class="python"><code>cols = [0,3,4,7]
+CTMdata.drop(CTMdata.columns[cols],axis=1,inplace=True)
+
+CTMdata.columns = [&quot;gisid&quot;,&quot;dzong&quot;,&quot;monks&quot;,&quot;nuns&quot;]
+
+# Fill NA with zero for further math
+
+CTMdata = CTMdata.fillna(0)
+
+# Trim white space in dzong names that leads to one of them counting as two factor levels
+
+CTMdata[&#39;dzong&#39;] = CTMdata[&#39;dzong&#39;].str.strip()
+
+# Some consolidation of dzong names to better match GIS data
+CTMdata = CTMdata.replace(&quot;Sreng dang E khul&quot;, &quot;Nedong&quot;)
+CTMdata = CTMdata.replace(&quot;U khul (Potala)&quot;, &quot;Potala&quot;)
+CTMdata = CTMdata.replace(&quot;Shigatse dang Rinchen&quot;, &quot;Shigatse&quot;)
+CTMdata = CTMdata.replace(&quot;Tsang khul dang Tod khul Rinpung khul&quot;, &quot;Rinpung&quot;)
+CTMdata = CTMdata.replace(&quot;Dakpo - Chokhorgyal&quot;, &quot;Chokhorgyal&quot;)
+CTMdata = CTMdata.replace(&quot;Dzonga / Saga&quot;, &quot;Dzongka&quot;)
+
+# Create a new column to hold a total of the two census columns of the original
+
+CTMdata[&#39;totalcensus&#39;] = CTMdata[&#39;monks&#39;] + CTMdata[&#39;nuns&#39;]
+
+# Write out the cleaned and updated version of the census data
+
+#CTMdata.to_csv(r&#39;..\Data\CTMdata_edit.csv&#39;, index = False)
+
+# Load spatial point data for the monasteries
+
+spatial = pd.DataFrame(pd.read_csv(r&quot;C:\Users\bowma\Documents\data_analyst_portfolio\data\spatial_albers.csv&quot;))
+print (spatial.head())
+
+# Join CTM data to spatial points by name</code></pre>
+<pre><code>##    gisid  altgisid        dzong         xcoord         ycoord
+## 0      1       107      Chongye  163424.265625 -438352.406250
+## 1      2       116      Chushur   70805.554687 -403952.906250
+## 2      3       136  Chokhorgyal  264969.125000 -390320.781250
+## 3      4       125        Darma  120199.898437 -528731.812500
+## 4      5       104          Dol  106986.598310 -422982.848673</code></pre>
+<pre class="python"><code>join = pd.merge(CTMdata, spatial, on=&#39;dzong&#39;, how=&#39;outer&#39;, indicator= True)
+#cols = [&#39;gisid_y&#39;,&#39;altgisid&#39;,&#39;xcoord&#39;,&#39;ycoord&#39;,&#39;_merge&#39;]
+#join.drop(cols,axis=1,inplace=True)
+#join.columns = [&#39;gisid&#39;,&#39;dzong&#39;,&#39;monks&#39;,&#39;nuns&#39;,&#39;totalcensus&#39;]
+
+# Providing an unique numeric id for each unique dzong name for aggregation
+join = join.sort_values([&#39;dzong&#39;])
+join[&#39;gisid&#39;] = pd.factorize(join[&#39;dzong&#39;])[0]
+
+print(join.head())
+# Aggregate census data on dzong (one entry per unique id)</code></pre>
+<pre><code>##     gisid_x        dzong  monks   nuns  ...      xcoord        ycoord  _merge  gisid
+## 113       0  Chokhorgyal    0.0  106.0  ...  264969.125 -390320.78125    both      0
+## 100       0  Chokhorgyal    8.0    0.0  ...  264969.125 -390320.78125    both      0
+## 99        0  Chokhorgyal    9.0    0.0  ...  264969.125 -390320.78125    both      0
+## 98        0  Chokhorgyal    9.0    0.0  ...  264969.125 -390320.78125    both      0
+## 97        0  Chokhorgyal    9.0    0.0  ...  264969.125 -390320.78125    both      0
+## 
+## [5 rows x 11 columns]</code></pre>
+<pre class="python"><code>agg = join.groupby(
+   [&#39;gisid&#39;]
+).agg(
+    {
+         &#39;gisid&#39;:&#39;first&#39;,
+         &#39;dzong&#39;: &#39;first&#39;,
+         &#39;monks&#39;: sum,
+         &#39;nuns&#39;: sum,
+         &#39;totalcensus&#39;: sum,    
+    }
+)
+
+
+# Copy data for Shigatse to Rinchentse
+
+agg.loc[agg[&#39;dzong&#39;] == &#39;Rinchentse&#39;, &#39;totalcensus&#39;] = agg.iloc[52,2]
+
+# Make Phari &quot;no data&quot;
+
+agg.loc[agg[&#39;dzong&#39;] == &#39;Phari&#39;, &#39;totalcensus&#39;] = 0
+
+
+# Make Phari 0 given historical circumstances
+agg.loc[(agg[&#39;dzong&#39;] == &#39;Phari&#39;), &#39;monks&#39;] = 0
+
+# Export final data for spatial join
+
+#agg.to_csv(r&#39;..\Data\datajoin.csv&#39;, index = False)
+</code></pre>
+<div
+id="joining-data-calculating-geometries-and-estimating-population-in-qgis"
+class="section level2">
+<h2>Joining data, calculating geometries, and estimating population in
+QGIS</h2>
+<p>The following script loads necessary data into QGIS, generates
+voronoi polygons for each monestary, calculates area, intersects
+farmland, voronoi polies, and census data, then runs calculations that
+estimate total population per area based on farmland and suggested
+caloric intake per person and compares that to the clerical population
+as found in the census.</p>
+<div id="loading-data-and-calculating-geometries"
+class="section level3">
+<h3>Loading data and calculating geometries</h3>
+<pre class="python"><code># To be run in QGIS Python Console
+# This is not stand-alone script
+
+## Overview ##
+#1 Establish working directories
+#2 Load required packages
+#3 Preparing data for calculations
+#4 Calculating area under 4400 meters
+#5 Calculating estimated farmland based on sampling
+#6 Grain yield per hectare estimation
+
+# Begin Script
+print(&#39;Script started...&#39;)
+
+##################################################################################################################
+## 1 ## Establish working directories for incoming and outgoing data to simplify customization and shorten code ##
+##################################################################################################################
+
+# Change these paths to those on your local machine where the initial data resides and where you want your outputs to go
+inpath = &#39;Your Data Folder Here&#39;
+outpath = &#39;Your Output Folder Here&#39;
+
+######################################################
+## 2 ## Load necessary packages for QGIS processing ##
+######################################################
+import os
+import processing
+from PyQt5.QtGui import *
+from qgis.core import QgsVectorFileWriter
+
+##########################################
+## 3 ## Preparing data for calculations ##
+##########################################
+
+# Load csv of prepared Monk Census data pre-processed in python
+
+print(&#39;Loading csv...&#39;)
+csv_path = &quot;file:///../Data/datajoin.csv&quot; #Put the path to your version of the csv here
+csv = QgsVectorLayer(csv_path,&quot;datajoin&quot;,&quot;delimitedtext&quot;)
+QgsProject.instance().addMapLayer(csv)
+
+
+# Load fortress points
+
+print(&#39;Loading fortress points...&#39;)
+monastery_path = inpath + &#39;monk_points_edit.shp&#39;
+monastery = iface.addVectorLayer(monastery_path, &quot;&quot;, &quot;ogr&quot;)
+
+
+# Load boundary tract
+
+print(&#39;Loading boundary...&#39;)
+tract_path = inpath + &#39;twang_tract.shp&#39;
+tract = iface.addVectorLayer(tract_path, &quot;&quot;, &quot;ogr&quot;)
+
+
+# Join csv to fortress shapefile
+print(&#39;Joining csv to monastery shapefile...&#39;)
+
+input = monastery
+field = &#39;dzong&#39;
+input_2 = csv
+field_2 = &#39;dzong&#39;
+fields_to_copy = [&#39;monks&#39;,&#39;nuns&#39;,&#39;totalcensus&#39;,&#39;ecoregion&#39;]
+output = outpath + &#39;joined_points.shp&#39;
+
+processing.runAndLoadResults(
+    &quot;native:joinattributestable&quot;,
+    {&#39;INPUT&#39;:input,
+    &#39;FIELD&#39;:field,
+    &#39;INPUT_2&#39;:input_2,
+    &#39;FIELD_2&#39;:field_2,
+    &#39;FIELDS_TO_COPY&#39;:fields_to_copy,
+    &#39;METHOD&#39;:1,
+    &#39;DISCARD_NONMATCHING&#39;:False,
+    &#39;PREFIX&#39;:&#39;&#39;,
+    &#39;OUTPUT&#39;:output})
+
+
+# Run voronoi polygon on joined points and add geometry attributes to calculate area + perimeter 
+
+print(&#39;Creating Thiessen polygons...&#39;)
+
+input = outpath + &#39;joined_points.shp&#39;
+buffer = 150
+output = outpath + &#39;voronoi_poly.shp&#39;
+
+processing.run(
+    &quot;qgis:voronoipolygons&quot;,
+    {&#39;INPUT&#39;:input,
+     &#39;BUFFER&#39;:buffer,
+     &#39;OUTPUT&#39;:output})
+
+# Adding geometry attributes (area, perimeter) to voronoi polies
+
+input = outpath + &#39;voronoi_poly.shp&#39;
+output = outpath + &#39;voronoi_geom.shp&#39;
+
+processing.run(
+    &quot;qgis:exportaddgeometrycolumns&quot;,
+    {&#39;INPUT&#39;:input,
+     &#39;CALC_METHOD&#39;:0,
+     &#39;OUTPUT&#39;:output})
+
+
+# Run clip on voronoi polies with tract boundary
+
+print(&#39;Clipping Thiessen polies to boundary...&#39;)
+
+input = outpath + &#39;voronoi_geom.shp&#39;
+overlay = inpath + &#39;twang_tract.shp&#39;
+output = outpath + &#39;voronoi_clip.shp&#39;
+
+processing.run(
+    &quot;native:clip&quot;,
+    {&#39;INPUT&#39;:input,
+     &#39;OVERLAY&#39;:overlay,
+     &#39;OUTPUT&#39;:output})
+
+
+# Run and load voronoi polies as singleparts for geometry fix later (split polygon for Tsegang)
+
+print(&#39;Splitting Thiessen result into singleparts...&#39;)
+
+input = outpath + &#39;voronoi_clip.shp&#39;
+output = outpath + &#39;voronoi_singleparts.shp&#39;
+
+processing.run(
+    &quot;native:multiparttosingleparts&quot;,
+    {&#39;INPUT&#39;:input,
+     &#39;OUTPUT&#39;:output})
+
+input = inpath + &#39;farm_sample.shp&#39;
+overlay = inpath + &#39;china_arable.shp&#39;
+output = outpath + &#39;farm_union.shp&#39;
+
+processing.run(
+    &quot;native:union&quot;,
+    {&#39;INPUT&#39;:input,
+    &#39;OVERLAY&#39;:overlay,
+    &#39;OVERLAY_FIELDS_PREFIX&#39;:&#39;&#39;,
+    &#39;OUTPUT&#39;:output})
+    
+# Clip union to boundary tract
+input = outpath + &#39;farm_union.shp&#39;
+overlay = inpath + &#39;twang_tract.shp&#39;
+output = outpath + &#39;farm_clip.shp&#39;
+
+processing.run(
+    &quot;native:clip&quot;,
+    {&#39;INPUT&#39;:input,
+    &#39;OVERLAY&#39;:overlay,
+    &#39;OUTPUT&#39;:output})
+    
+# Clip farmland result to exclude independent powers
+input = outpath + &#39;farm_clip.shp&#39;
+overlay = inpath + &#39;independent.shp&#39;
+output = outpath + &#39;farm_clip2.shp&#39;
+
+processing.run(&quot;native:difference&quot;,
+    {&#39;INPUT&#39;:input,
+    &#39;OVERLAY&#39;:overlay,
+    &#39;OUTPUT&#39;:output})</code></pre>
+<p><strong><em>The results of these tasks look something like this,
+where each point becomes a voronoi polygon bounded by others and the
+entire result is clipped to the tract boundary. In addition, areas that
+were independent of monestary control are excluded using another
+shapefile that specified those small areas.</em></strong></p>
+<p><img src="images/voronoi.png" /></p>
+</div>
+</div>
+<div
+id="using-farmland-to-estimate-grain-yields-and-potential-population"
+class="section level2">
+<h2>Using farmland to estimate grain yields and potential
+population</h2>
+<p>This part of the script combines farmland area data and agronomic and
+anthropological data in order to estimate a low and high potential for
+grain yields and from there low and high population estimates based on
+those yields and caloric intake. The range is important since without
+hard numbers of historical population or farmland extent/efficiency, we
+should be careful not to simply spit out one number. There is much
+variance locally and regionally.</p>
+<pre class="python"><code># Intersect farmland with Thiessens
+input = outpath + &#39;farm_clip2.shp&#39;
+overlay = outpath + &#39;voronoi_singleparts.shp&#39;
+overlay_fields = [&#39;dzong&#39;,&#39;ecoregion&#39;]
+output = outpath + &#39;farmland_intersection.shp&#39;
+
+processing.run(
+    &quot;native:intersection&quot;,
+    {&#39;INPUT&#39;:input,
+     &#39;OVERLAY&#39;:overlay,
+     &#39;INPUT_FIELDS&#39;:[],
+     &#39;OVERLAY_FIELDS&#39;:overlay_fields,
+     &#39;OVERLAY_FIELDS_PREFIX&#39;:&#39;&#39;,
+     &#39;OUTPUT&#39;:output})
+
+#Add area and perimeter to farmland sample
+
+print(&#39;Calculating area and perimeter...&#39;)
+
+input = outpath + &#39;farmland_intersection.shp&#39;
+output = outpath + &#39;farmland_geom.shp&#39;
+
+processing.run(
+    &quot;qgis:exportaddgeometrycolumns&quot;,
+    {&#39;INPUT&#39;:input,
+    &#39;CALC_METHOD&#39;:0,
+    &#39;OUTPUT&#39;:output})
+
+print(&#39;Aggregating...&#39;)
+
+input = outpath + &#39;farmland_geom.shp&#39;
+group_by = &#39;\&quot;dzong\&quot;&#39;
+output = outpath + &#39;farm_agg.shp&#39;
+
+processing.runAndLoadResults(
+    &quot;qgis:aggregate&quot;, {
+    &#39;INPUT&#39;:input,
+    &#39;GROUP_BY&#39;:group_by,
+    &#39;AGGREGATES&#39;:[
+    {&#39;aggregate&#39;: &#39;first_value&#39;, &#39;delimiter&#39;: &#39;,&#39;, &#39;input&#39;: &#39;&quot;ecoregion&quot;&#39;, &#39;length&#39;: 254, &#39;name&#39;: &#39;ecoregion&#39;, &#39;precision&#39;: 0, &#39;type&#39;: 10},
+    {&#39;aggregate&#39;: &#39;sum&#39;, &#39;delimiter&#39;: &#39;,&#39;, &#39;input&#39;: &#39;&quot;area&quot;&#39;, &#39;length&#39;: 23, &#39;name&#39;: &#39;area&#39;, &#39;precision&#39;: 15, &#39;type&#39;: 6},
+    {&#39;aggregate&#39;: &#39;first_value&#39;, &#39;delimiter&#39;: &#39;,&#39;, &#39;input&#39;: &#39;&quot;dzong&quot;&#39;, &#39;length&#39;: 254, &#39;name&#39;: &#39;dzong_2&#39;, &#39;precision&#39;: 0, &#39;type&#39;: 10}],
+    &#39;OUTPUT&#39;:output})
+
+# Calculating area in km of farmland as digitized
+
+print(&#39;Calculating farm area...&#39;)
+farm_agg = QgsProject.instance().mapLayersByName(&quot;farm_agg&quot;)[0]
+layer_provider = farm_agg.dataProvider()
+layer_provider.addAttributes([QgsField(&#39;farm_km&#39;, QVariant.Double)])
+farm_agg.updateFields()
+
+target_field = &#39;farm_km&#39;
+
+# Calculates the new square km column by dividing square meters held in area_2 and dividing by 1 million
+
+def calculate_attributes():
+    with edit(farm_agg):
+        for feature in farm_agg.getFeatures():
+            feature.setAttribute(feature.fieldNameIndex(&#39;farm_km&#39;), feature[&#39;area&#39;] / 1000000)
+            farm_agg.updateFeature(feature)
+    print(f&quot;Attribute calculated for {target_field} field&quot;)
+
+calculate_attributes()
+
+# Create farm_agg_2 as another aggregate by this time the mean farm area by a mean of the samples in the ecoregion.
+# This allows the remaining counties to recieve a an estimated farmland per sqkm of area under 4700m without 
+# Digitizing all farmland in such a vast area.
+
+print(&#39;Aggregating...&#39;)
+
+(&#39;Joining area calculations to Thiessen polies...&#39;)
+
+input = outpath + &#39;voronoi_singleparts.shp&#39;
+field = &#39;dzong&#39;
+input_2 = outpath + &#39;farm_agg.shp&#39;
+field_2 = &#39;dzong_2&#39;
+fields_to_copy = [&#39;farm_km&#39;]
+output = outpath + &#39;thiessen_temp.shp&#39;
+
+processing.run(
+    &quot;native:joinattributestable&quot;,
+    {&#39;INPUT&#39;:input,
+     &#39;FIELD&#39;:field,
+     &#39;INPUT_2&#39;:input_2,
+     &#39;FIELD_2&#39;:field_2,
+     &#39;FIELDS_TO_COPY&#39;:fields_to_copy,
+     &#39;METHOD&#39;:1,
+     &#39;DISCARD_NONMATCHING&#39;:False,
+     &#39;PREFIX&#39;:&#39;&#39;,
+     &#39;OUTPUT&#39;:output})
+
+    
+# This formula divides estimated farmland by the area of the Thiessen poly yielding a ratio (farm_unit)
+input = outpath + &#39;thiessen_temp.shp&#39;
+field_name = &#39;farm_unit&#39;
+formula = &#39;\&quot;farm_km\&quot;  /  \&quot;zone_area\&quot; &#39;
+output = outpath + &#39;thiessen_calc1.shp&#39;
+
+processing.run(&quot;qgis:fieldcalculator&quot;,
+   {&#39;INPUT&#39;:input,
+    &#39;FIELD_NAME&#39;:field_name,
+    &#39;FIELD_TYPE&#39;:0,
+    &#39;FIELD_LENGTH&#39;:10,
+    &#39;FIELD_PRECISION&#39;:5,
+    &#39;NEW_FIELD&#39;:True,
+    &#39;FORMULA&#39;:formula,
+    &#39;OUTPUT&#39;:output})
+
+# This formula multiplies farm units by the area (in raster cells) under 4700 m to estimate potential farmland for a poly
+input = outpath + &#39;thiessen_calc1.shp&#39;
+field_name = &#39;farm&#39;
+formula = &#39; \&quot;farm_unit\&quot;  *  \&quot;zone_area\&quot; &#39;
+output = outpath + &#39;thiessen_calc2.shp&#39;
+
+processing.run(
+    &quot;qgis:fieldcalculator&quot;,
+    {&#39;INPUT&#39;:input,
+     &#39;FIELD_NAME&#39;:field_name,
+     &#39;FIELD_TYPE&#39;:0,
+     &#39;FIELD_LENGTH&#39;:10,
+     &#39;FIELD_PRECISION&#39;:5,
+     &#39;NEW_FIELD&#39;:True,
+     &#39;FORMULA&#39;:formula,
+     &#39;OUTPUT&#39;:output})
+
+# Calculating hectares from sqkm
+print(&#39;Calculating hectares...&#39;)
+
+input = outpath + &#39;thiessen_calc2.shp&#39;
+field_name = &#39;farm_hec&#39;
+formula = &#39; \&quot;farm_km\&quot;  * 100&#39;
+output = outpath + &#39;thiessen_calc3.shp&#39;
+
+processing.run(
+    &quot;qgis:fieldcalculator&quot;,
+    {&#39;INPUT&#39;:input,
+     &#39;FIELD_NAME&#39;:field_name,
+     &#39;FIELD_TYPE&#39;:0,
+     &#39;FIELD_LENGTH&#39;:10,
+     &#39;FIELD_PRECISION&#39;:3,
+     &#39;NEW_FIELD&#39;:True,
+     &#39;FORMULA&#39;:formula,
+     &#39;OUTPUT&#39;:output})
+     
+     # Calculating hectares from sqkm
+print(&#39;Calculating hectares...&#39;)
+
+
+input = outpath + &#39;thiessen_calc3.shp&#39;
+field_name = &#39;barhec&#39;
+formula = &#39; \&quot;farm_hec\&quot;  * 0.70&#39;
+output = outpath + &#39;thiessen_calc4.shp&#39;
+
+processing.run(
+    &quot;qgis:fieldcalculator&quot;,
+    {&#39;INPUT&#39;:input,
+     &#39;FIELD_NAME&#39;:field_name,
+     &#39;FIELD_TYPE&#39;:0,
+     &#39;FIELD_LENGTH&#39;:10,
+     &#39;FIELD_PRECISION&#39;:3,
+     &#39;NEW_FIELD&#39;:True,
+     &#39;FORMULA&#39;:formula,
+     &#39;OUTPUT&#39;:output})
+     
+#############################################
+## 6 ## Grain yield per hectare estimation ##
+#############################################
+
+# Calculating barley cultivation from hectares on the low end of the range
+# Estimated hectares of farmland multuplied by 1.5 metric tons
+
+print(&#39;Calculating low estimates of barley yields...&#39;)
+
+input = outpath + &#39;thiessen_calc4.shp&#39;
+field_name = &#39;barley_low&#39;
+formula = &#39; \&quot;barhec\&quot;  * 1.5&#39;
+output = outpath + &#39;thiessen_calc5.shp&#39;
+
+processing.run(
+    &quot;qgis:fieldcalculator&quot;,
+    {&#39;INPUT&#39;:input,
+     &#39;FIELD_NAME&#39;:field_name,
+     &#39;FIELD_TYPE&#39;:0,
+     &#39;FIELD_LENGTH&#39;:10,
+     &#39;FIELD_PRECISION&#39;:3,
+     &#39;NEW_FIELD&#39;:True,
+     &#39;FORMULA&#39;:formula,
+     &#39;OUTPUT&#39;:output})
+
+print(&#39;Calculating high estimates of barley yields...&#39;)
+
+# Calculating barley cultivation from hectares on the high end of the range
+# Estimated hectares of farmland multiplied by 2.2 metric tons
+
+input = outpath + &#39;thiessen_calc5.shp&#39;
+field_name = &#39;barley_high&#39;
+formula = &#39; \&quot;barhec\&quot;  * 2.2&#39;
+output = outpath + &#39;thiessen_calc6.shp&#39;
+
+processing.run(
+    &quot;qgis:fieldcalculator&quot;,
+    {&#39;INPUT&#39;:input,
+     &#39;FIELD_NAME&#39;:field_name,
+     &#39;FIELD_TYPE&#39;:0,
+     &#39;FIELD_LENGTH&#39;:10,
+     &#39;FIELD_PRECISION&#39;:3,
+     &#39;NEW_FIELD&#39;:True,
+     &#39;FORMULA&#39;:formula,
+     &#39;OUTPUT&#39;:output})
+
+# Calculating barley cultivation from hectares on the average
+# Estimated hectares of farmland multiplied by 1.85 metric tons
+
+input = outpath + &#39;thiessen_calc6.shp&#39;
+field_name = &#39;barley_avg&#39;
+formula = &#39; \&quot;barhec\&quot;  * 1.85&#39;
+output = outpath + &#39;thiessen_calc7.shp&#39;
+
+processing.run(
+    &quot;qgis:fieldcalculator&quot;,
+    {&#39;INPUT&#39;:input,
+     &#39;FIELD_NAME&#39;:field_name,
+     &#39;FIELD_TYPE&#39;:0,
+     &#39;FIELD_LENGTH&#39;:10,
+     &#39;FIELD_PRECISION&#39;:3,
+     &#39;NEW_FIELD&#39;:True,
+     &#39;FORMULA&#39;:formula,
+     &#39;OUTPUT&#39;:output})
+    
+#Calculating low end of the range for population estimate
+
+input = outpath + &#39;thiessen_calc7.shp&#39;
+field_name = &#39;pop_low&#39;
+formula = &#39; \&quot;barley_low\&quot;  / 0.320125&#39;
+output = outpath + &#39;thiessen_calc8.shp&#39;
+
+processing.run(
+    &quot;qgis:fieldcalculator&quot;,
+    {&#39;INPUT&#39;:input,
+     &#39;FIELD_NAME&#39;:field_name,
+     &#39;FIELD_TYPE&#39;:0,
+     &#39;FIELD_LENGTH&#39;:10,
+     &#39;FIELD_PRECISION&#39;:3,
+     &#39;NEW_FIELD&#39;:True,
+     &#39;FORMULA&#39;:formula,
+     &#39;OUTPUT&#39;:output})
+
+# Calculating high end of the range for population estimate
+
+input = outpath + &#39;thiessen_calc8.shp&#39;
+field_name = &#39;pop_high&#39;
+formula = &#39; \&quot;barley_hig\&quot;  / 0.320125&#39;
+output = outpath + &#39;thiessen_calc9.shp&#39;
+
+processing.run(
+    &quot;qgis:fieldcalculator&quot;,
+    {&#39;INPUT&#39;:input,
+     &#39;FIELD_NAME&#39;:field_name,
+     &#39;FIELD_TYPE&#39;:0,
+     &#39;FIELD_LENGTH&#39;:10,
+     &#39;FIELD_PRECISION&#39;:3,
+     &#39;NEW_FIELD&#39;:True,
+     &#39;FORMULA&#39;:formula,
+     &#39;OUTPUT&#39;:output})
+    
+# Calculating average of the range for population estimate
+
+input = outpath + &#39;thiessen_calc9.shp&#39;
+field_name = &#39;pop_avg&#39;
+formula = &#39; \&quot;barley_avg\&quot; / 0.320125&#39;
+output = outpath + &#39;thiessen_calc10.shp&#39;
+
+processing.run(
+    &quot;qgis:fieldcalculator&quot;,
+    {&#39;INPUT&#39;:input,
+     &#39;FIELD_NAME&#39;:field_name,
+     &#39;FIELD_TYPE&#39;:0,
+     &#39;FIELD_LENGTH&#39;:10,
+     &#39;FIELD_PRECISION&#39;:3,
+     &#39;NEW_FIELD&#39;:True,
+     &#39;FORMULA&#39;:formula,
+     &#39;OUTPUT&#39;:output})
+
+
+input = outpath + &#39;thiessen_calc10.shp&#39;
+field_name = &#39;Mratio_avg&#39;
+formula = &#39; \&quot;monks\&quot; / \&quot;pop_avg\&quot;&#39;
+output = outpath + &#39;thiessen_calc11.shp&#39;
+
+processing.run(
+    &quot;qgis:fieldcalculator&quot;,
+    {&#39;INPUT&#39;:input,
+     &#39;FIELD_NAME&#39;:field_name,
+     &#39;FIELD_TYPE&#39;:0,
+     &#39;FIELD_LENGTH&#39;:10,
+     &#39;FIELD_PRECISION&#39;:3,
+     &#39;NEW_FIELD&#39;:True,
+     &#39;FORMULA&#39;:formula,
+     &#39;OUTPUT&#39;:output})
+
+input = outpath + &#39;thiessen_calc11.shp&#39;
+field_name = &#39;Fratio_avg&#39;
+formula = &#39; \&quot;nuns\&quot; / \&quot;pop_avg\&quot;&#39;
+output = outpath + &#39;thiessen_calc12.shp&#39;
+
+processing.run(
+    &quot;qgis:fieldcalculator&quot;,
+    {&#39;INPUT&#39;:input,
+     &#39;FIELD_NAME&#39;:field_name,
+     &#39;FIELD_TYPE&#39;:0,
+     &#39;FIELD_LENGTH&#39;:10,
+     &#39;FIELD_PRECISION&#39;:3,
+     &#39;NEW_FIELD&#39;:True,
+     &#39;FORMULA&#39;:formula,
+     &#39;OUTPUT&#39;:output})
+
+
+input = outpath + &#39;thiessen_calc12.shp&#39;
+field_name = &#39;pop_dens&#39;
+formula = &#39;\&quot;pop_avg\&quot;  /  (\&quot;area\&quot; / 1000000)&#39;
+output = outpath + &#39;thiessen_calc13.shp&#39;
+
+processing.runAndLoadResults(
+    &quot;qgis:fieldcalculator&quot;,
+    {&#39;INPUT&#39;:input,
+     &#39;FIELD_NAME&#39;:field_name,
+     &#39;FIELD_TYPE&#39;:0,
+     &#39;FIELD_LENGTH&#39;:10,
+     &#39;FIELD_PRECISION&#39;:3,
+     &#39;NEW_FIELD&#39;:True,
+     &#39;FORMULA&#39;:formula,
+     &#39;OUTPUT&#39;:output})</code></pre>
+<p><strong><em>At this point, all the necessary calculations have been
+performed and I now have grain production estimates, caloric intake
+estimates, and, most of all, a high-low population estimate for each
+area neatly packaged within a choropleth map. I can plot the estimated
+populations per ecoregion or by sub-region defined by monastery
+points.</em></strong></p>
+<p><img src="images/regions.png" /> <img src="images/choropleth.png" />
+<img src="images/clerical_ratio.png" /></p>
+</div>
+<div id="comparing-estimated-population-to-1990-census"
+class="section level2">
+<h2>Comparing estimated population to 1990 census</h2>
+<p>I can now compare the historical estimates to the more recent census
+as well as spit out a summary of the population results right into the
+console for a quick check. It turns out that the estimates were mostly
+under the 1990 census which is a sanity check on our methodology, though
+some areas are too high given other variables remain constant. Many
+things can alter the results including the spatial containers, farmland
+data (necessarily digitized from modern farmland), and historical events
+that may have made some areas more fertile or populated than others.
+Still, the methodology is a new approach to the problem and allows for
+scholars to tinker and improve the model.</p>
+<pre class="python"><code># Adding 1990 population centroids and joining data to thiessen polies
+
+input = outpath + &#39;thiessen_calc13.shp&#39;
+join = inpath + &#39;1990_pop.shp&#39;
+join_fields = [&#39;total_pop_&#39;]
+output = outpath + &#39;thiessen_calc14.shp&#39;
+
+processing.run(
+    &quot;qgis:joinbylocationsummary&quot;,
+    {&#39;INPUT&#39;:input,
+    &#39;JOIN&#39;:join,
+    &#39;PREDICATE&#39;:[1],
+    &#39;JOIN_FIELDS&#39;:join_fields,
+    &#39;SUMMARIES&#39;:[5],
+    &#39;DISCARD_NONMATCHING&#39;:False,
+    &#39;OUTPUT&#39;:output})
+
+input = outpath + &#39;thiessen_calc14.shp&#39;
+field_name = &#39;change&#39;
+formula = &#39;\&quot;total_pop_\&quot;  /  \&quot;pop_avg\&quot;&#39;
+output = outpath + &#39;thiessen_calc15.shp&#39;
+
+processing.runAndLoadResults(
+    &quot;qgis:fieldcalculator&quot;,
+    {&#39;INPUT&#39;:input,
+     &#39;FIELD_NAME&#39;:field_name,
+     &#39;FIELD_TYPE&#39;:0,
+     &#39;FIELD_LENGTH&#39;:10,
+     &#39;FIELD_PRECISION&#39;:3,
+     &#39;NEW_FIELD&#39;:True,
+     &#39;FORMULA&#39;:formula,
+     &#39;OUTPUT&#39;:output})
+
+# Write out final thiessen shapefile and data as csv
+input_shp=QgsVectorLayer(output,&quot;export&quot;,&quot;ogr&quot;)
+input_shp.isValid() 
+output = outpath + &#39;thiessen_final.shp&#39;
+QgsVectorFileWriter.writeAsVectorFormat(input_shp,output,&quot;UTF-8&quot;,input_shp.crs(),&quot;ESRI Shapefile&quot;)
+output = outpath + &#39;thiessen_final.csv&#39;
+QgsVectorFileWriter.writeAsVectorFormat(input_shp,output,&quot;UTF-8&quot;,input_shp.crs(),&quot;CSV&quot;)
+
+low = sum(filter(None,[f[&#39;pop_low&#39;] for f in QgsProject.instance().mapLayersByName(&#39;thiessen_calc13&#39;)[0].getFeatures()]))
+high = sum(filter(None,[f[&#39;pop_high&#39;] for f in QgsProject.instance().mapLayersByName(&#39;thiessen_calc13&#39;)[0].getFeatures()]))
+avg = sum(filter(None,[f[&#39;pop_avg&#39;] for f in QgsProject.instance().mapLayersByName(&#39;thiessen_calc13&#39;)[0].getFeatures()]))
+
+
+print(&#39;The population ranges from &#39;)
+print(low)
+print(&#39;to&#39;)
+print(high)
+print(&#39;with an average of &#39;)
+print(avg)
+print(&#39;Script completed!&#39;)
+
+hec = sum(filter(None,[f[&#39;farm_hec&#39;] for f in QgsProject.instance().mapLayersByName(&#39;thiessen_calc13&#39;)[0].getFeatures()]))
+print(&#39;Total cultivated land equals &#39; + str(hec) + &#39; hectares.&#39;)
+print(str(hec*0.70) + &#39; of which are assumed to be cultivated as barley.&#39;)</code></pre>
+<p><strong><em>Here we can see the 1990 census represented as
+proportional symbols overlaying the modeled population levels as
+indicated by a red-tinted choropleth map. The model seems to have caught
+a lot of the spatial pattern from the bottom-up. This result suggests
+that my model is picking up on geographic realities of the best places
+to cultivate crops like barley and a decent way to backcast potential
+populations levels and, in turn, estimate how large the clerical
+population was in comparison.</em></strong></p>
+<p><img src="images/compare_1990.png" /></p>
+</div>
+</div>
+
+
+
+</div>
+</div>
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.odd').parent('tbody').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open');
+  });
+});
+</script>
+
+<!-- code folding -->
+
+<script>
+$(document).ready(function ()  {
+
+    // temporarily add toc-ignore selector to headers for the consistency with Pandoc
+    $('.unlisted.unnumbered').addClass('toc-ignore')
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_');
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

@@ -8,4 +8,6 @@ navbar:
       href: SQL.html
     - text: "R"
       href: R.html
+    - text: "Python"
+      href: Python.html
 output_dir: "docs"
