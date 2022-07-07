@@ -11,7 +11,7 @@ navbar:
     - text: "Python"
       href: Python.html
     - text: "Tableau"
-      href: tableau.html
+      href: Tableau.html
     - text: "Publications"
-      href: publications.html
+      href: Publications.html
 output_dir: "docs"
