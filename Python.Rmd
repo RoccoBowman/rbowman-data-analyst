@@ -15,13 +15,11 @@ knitr::opts_chunk$set(message=FALSE,warning=FALSE, cache=FALSE)
 knitr::opts_knit$set(root.dir = "C:/Users/bowma/Documents/data_analyst_portfolio")
 ```
 
-# Cleaning and transforming data for insight
-
 I can also employ Python for data cleaning and transformation work as well as any time I need to interface with another software such as ArcGIS or QGIS. Here, I will demonstrate how I used Python to clean and prepare census data for joining to spatial points, then use a script within QGIS to transform that census data and other spatial features into insights about demographics. This study was interested in estimating the clerical population for historical Tibet.
 
 The article can be found [here](https://himalaya.socanth.cam.ac.uk/collections/journals/ret/pdf/ret_61_06.pdf 'Go').
 
-
+# Loading and cleaning data
 
 ```{python}
 import os
@@ -117,12 +115,12 @@ agg.loc[(agg['dzong'] == 'Phari'), 'monks'] = 0
 
 ```
 
-## Joining data, calculating geometries, and estimating population in QGIS
+# Joining data, calculating geometries, and estimating population in QGIS
 
 The following script loads necessary data into QGIS, generates voronoi polygons for each monestary, calculates area, intersects farmland, voronoi polies, and census data, then runs calculations that estimate total population per area based on farmland and suggested caloric intake per person and compares that to the clerical population as found in the census. 
 
 
-### Loading data and calculating geometries
+## Loading data and calculating geometries
 
 ```{python, eval=FALSE}
 
@@ -295,7 +293,7 @@ processing.run("native:difference",
 
 ![](images/voronoi.png)
 
-## Using farmland to estimate grain yields and potential population
+# Estimating grain yields and population
 
 This part of the script combines farmland area data and agronomic and anthropological data in order to estimate a low and high potential for grain yields and from there low and high population estimates based on those yields and caloric intake. The range is important since without hard numbers of historical population or farmland extent/efficiency, we should be careful not to simply spit out one number. There is much variance locally and regionally.
 
@@ -642,7 +640,7 @@ processing.runAndLoadResults(
 ![](images/choropleth.png)
 ![](images/clerical_ratio.png)
 
-## Comparing estimated population to 1990 census
+# Comparing estimated population to 1990 census
 
 I can now compare the historical estimates to the more recent census as well as spit out a summary of the population results right into the console for a quick check. It turns out that the estimates were mostly under the 1990 census which is a sanity check on our methodology, though some areas are too high given other variables remain constant. Many things can alter the results including the spatial containers, farmland data (necessarily digitized from modern farmland), and historical events that may have made some areas more fertile or populated than others. Still, the methodology is a new approach to the problem and allows for scholars to tinker and improve the model.
 

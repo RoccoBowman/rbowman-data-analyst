@@ -350,9 +350,6 @@ div.tocify {
 </div>
 
 
-<div id="cleaning-and-transforming-data-for-insight"
-class="section level1">
-<h1>Cleaning and transforming data for insight</h1>
 <p>I can also employ Python for data cleaning and transformation work as
 well as any time I need to interface with another software such as
 ArcGIS or QGIS. Here, I will demonstrate how I used Python to clean and
@@ -363,6 +360,8 @@ estimating the clerical population for historical Tibet.</p>
 <p>The article can be found <a
 href="https://himalaya.socanth.cam.ac.uk/collections/journals/ret/pdf/ret_61_06.pdf"
 title="Go">here</a>.</p>
+<div id="loading-and-cleaning-data" class="section level1">
+<h1>Loading and cleaning data</h1>
 <pre class="python"><code>import os
 import pandas as pd
 import seaborn as sb
@@ -479,11 +478,12 @@ agg.loc[(agg[&#39;dzong&#39;] == &#39;Phari&#39;), &#39;monks&#39;] = 0
 
 #agg.to_csv(r&#39;..\Data\datajoin.csv&#39;, index = False)
 </code></pre>
+</div>
 <div
 id="joining-data-calculating-geometries-and-estimating-population-in-qgis"
-class="section level2">
-<h2>Joining data, calculating geometries, and estimating population in
-QGIS</h2>
+class="section level1">
+<h1>Joining data, calculating geometries, and estimating population in
+QGIS</h1>
 <p>The following script loads necessary data into QGIS, generates
 voronoi polygons for each monestary, calculates area, intersects
 farmland, voronoi polies, and census data, then runs calculations that
@@ -491,8 +491,8 @@ estimate total population per area based on farmland and suggested
 caloric intake per person and compares that to the clerical population
 as found in the census.</p>
 <div id="loading-data-and-calculating-geometries"
-class="section level3">
-<h3>Loading data and calculating geometries</h3>
+class="section level2">
+<h2>Loading data and calculating geometries</h2>
 <pre class="python"><code># To be run in QGIS Python Console
 # This is not stand-alone script
 
@@ -664,11 +664,8 @@ shapefile that specified those small areas.</em></strong></p>
 <p><img src="images/voronoi.png" /></p>
 </div>
 </div>
-<div
-id="using-farmland-to-estimate-grain-yields-and-potential-population"
-class="section level2">
-<h2>Using farmland to estimate grain yields and potential
-population</h2>
+<div id="estimating-grain-yields-and-population" class="section level1">
+<h1>Estimating grain yields and population</h1>
 <p>This part of the script combines farmland area data and agronomic and
 anthropological data in order to estimate a low and high potential for
 grain yields and from there low and high population estimates based on
@@ -1019,8 +1016,8 @@ points.</em></strong></p>
 <img src="images/clerical_ratio.png" /></p>
 </div>
 <div id="comparing-estimated-population-to-1990-census"
-class="section level2">
-<h2>Comparing estimated population to 1990 census</h2>
+class="section level1">
+<h1>Comparing estimated population to 1990 census</h1>
 <p>I can now compare the historical estimates to the more recent census
 as well as spit out a summary of the population results right into the
 console for a quick check. It turns out that the estimates were mostly
@@ -1097,7 +1094,6 @@ to cultivate crops like barley and a decent way to backcast potential
 populations levels and, in turn, estimate how large the clerical
 population was in comparison.</em></strong></p>
 <p><img src="images/compare_1990.png" /></p>
-</div>
 </div>
 
 

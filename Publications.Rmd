@@ -1,0 +1,31 @@
+---
+title: "Business Analytics and Dashboards with Tableau"
+output:
+  html_document:
+    toc: false
+    toc_float: true
+    collapsed: false
+    number_sections: false
+    toc_depth: 1
+    #code_folding: hide
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message=FALSE,warning=FALSE, cache=FALSE)
+knitr::opts_knit$set(root.dir = "C:/Users/bowma/Documents/data_analyst_portfolio")
+```
+
+Below is a list of publications which contain these case studies and more.
+
+2022 Bowman, R. N..  Grassroots Networks: Interdisciplinary Modeling of Nomadic Social Organization in Premodern Central Eurasia. UC Merced. ProQuest ID: Bowman_ucmerced_1660D_10782. Merritt ID: ark:/13030/m54z2cvs.
+
+2022 Ryavec Karl & Rocco N. Bowman. “Comparing Historical Tibetan Population Estimates with the Monks and Nuns: What was the Clerical Proportion?” Revue d'Etudes Tibétaines 61.
+
+2021 Bowman, Rocco N., and Karl E Ryavec. 2021. “Viewsheds of Cubic Mountaintop Tombs in Upper Tibet (Zhang Zhung).” Journal of Archaeological Science: Reports 37: 102998. https://doi.org/https://doi.org/10.1016/j.jasrep.2021.102998.
+
+2020 Rowena Gray & Rocco Bowman. 2020. “Locating the Manhattan housing market: GIS evidence for 1880-1910”, Historical Methods: A Journal of Quantitative and Interdisciplinary History
+
+2019 “Muir Wood - A Bold Few Blocks: A History of the Muir Wood Neighborhood in Merced, California and the People Who Built It”. Story Map. 
+
+
+

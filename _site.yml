@@ -10,4 +10,8 @@ navbar:
       href: R.html
     - text: "Python"
       href: Python.html
+    - text: "Tableau"
+      href: tableau.html
+    - text: "Publications"
+      href: publications.html
 output_dir: "docs"
