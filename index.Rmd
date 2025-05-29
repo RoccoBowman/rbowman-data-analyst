@@ -19,7 +19,7 @@ output: html_document
 
 # **About me**
 
-My name is Rocco and **I love to solve problems that help people and organizations do what they do best**. I also enjoy always learning new skills and tools that enable me to help in more capacities in an beyond SQL, R, Python, and GIS which I have used to publish peer-reviewed research during my PhD, enhance museum exhibits, and help first responders manage vital databases.
+My name is Rocco and **I love to solve problems that help people and organizations do what they do best**. I am passionate about learning new skills and ideas that grow my data tool bag which have enabled me to publish peer-reviewed scholarship during my PhD, enhance business intelligence for the US Navy, help first responders manage vital databases, and create interactive museum exhibits.
 
 Use the tabs above to explore some of the solutions I have worked on over the years and the tools I used to make them happen.
 <br />
@@ -45,9 +45,9 @@ Use the tabs above to explore some of the solutions I have worked on over the ye
 
 I like food and making food, particularly things like fresh pizza and pasta as well as cookies and cakes. This likely comes from many positive memories in Italian delis as a kid. I enjoy feeding people! 
 
-I love watching the sunset in San Diego with a gelato in my hand and my wife by my side. I also love doggos and hope to adopt one soon.
+I love watching the sunset in San Diego with a gelato in my hand and my wife by my side. The beach has always called to me and the ceaseless waves reset my system.
 
-I am also deeply curious about our shared past nationally and globally. History has always been an interest of mine, particularly the end of the Roman Republic and writers like Sallust and Livy. Besides ancient Rome, perhaps my favorite scholar is Ibn Khaldun who wrote one of the first systematic analyses of the rise and fall of internal orders.
+History has always been an interest of mine, particularly the end of the Roman Republic and writers like Sallust, Livy, Polybius, and Cicero. Besides ancient Rome, perhaps my favorite scholar is Ibn Khaldun who wrote one of the first systematic analyses of the rise and fall of internal orders.
 
 <br />
 
